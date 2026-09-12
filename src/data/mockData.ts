@@ -1,0 +1,413 @@
+import { Appointment, Consultation, DoctorProfile, Patient, Prescription } from '../types';
+import { getTodayDateString } from '../utils/dateUtils';
+
+export const initialDoctorProfile: DoctorProfile = {
+  id: 'doc-1',
+  name: 'Cheikh Oumar Diop',
+  title: 'Dr.',
+  specialty: 'Médecine Générale & Santé Familiale',
+  onms: 'SN-04821 / 2012',
+  ninea: '004892150 2Y3',
+  phone: '+221 33 825 40 50',
+  email: 'cabinet.drdiop@sante.sn',
+  address: 'Avenue Cheikh Anta Diop, Immeuble Horizon Santé, Fann-Résidence',
+  city: 'Dakar',
+  consultationFee: 15000,
+  defaultDuration: 30,
+  whatsappReminderHours: 24,
+};
+
+export const initialPatients: Patient[] = [
+  {
+    id: 'pat-1',
+    firstName: 'Amadou',
+    lastName: 'Diallo',
+    gender: 'M',
+    birthDate: '1985-05-14',
+    ssn: '1 751 1985 02419', // Numéro d'Identification Nationale (NIN)
+    phone: '+221 77 645 23 18',
+    email: 'amadou.diallo@gmail.com',
+    address: 'Mermoz Pyrotechnie, Dakar',
+    bloodGroup: 'A+',
+    allergies: ['Pénicilline'],
+    medicalHistory: ['Hypertension artérielle modérée (2020)', 'Appendicectomie'],
+    chronicTreatments: ['Amlodipine 5mg (1 comprimé le matin)'],
+    emergencyContact: {
+      name: 'Aïda Diallo',
+      relationship: 'Épouse',
+      phone: '+221 78 543 21 09',
+    },
+    notes: 'Patient régulier, observance thérapeutique rigoureuse.',
+    createdAt: '2023-01-15',
+  },
+  {
+    id: 'pat-2',
+    firstName: 'Fatou Bintou',
+    lastName: 'Sow',
+    gender: 'F',
+    birthDate: '1992-11-23',
+    ssn: '2 751 1992 01842',
+    phone: '+221 78 123 45 67',
+    email: 'fatou.sow@orange.sn',
+    address: 'Almadies, Route du Méridien, Dakar',
+    bloodGroup: 'O+',
+    allergies: ['Poussières d\'harmattan', 'Aspirine'],
+    medicalHistory: ['Asthme d\'effort léger', 'Épisodes de bronchite en hivernage'],
+    chronicTreatments: ['Salbutamol (Ventoline spray en cas de gêne)'],
+    emergencyContact: {
+      name: 'Mamadou Sow',
+      relationship: 'Frère',
+      phone: '+221 77 234 56 78',
+    },
+    notes: 'Sensibilité accrue aux poussières et variations de saison.',
+    createdAt: '2023-03-20',
+  },
+  {
+    id: 'pat-3',
+    firstName: 'Ibrahima',
+    lastName: 'Diouf',
+    gender: 'M',
+    birthDate: '1958-03-02',
+    ssn: '1 751 1958 00923',
+    phone: '+221 76 543 21 09',
+    email: 'ibrahima.diouf@expresso.sn',
+    address: 'Sacré-Cœur 3, Villa 104, Dakar',
+    bloodGroup: 'B+',
+    allergies: ['Sulfamides'],
+    medicalHistory: ['Diabète de type 2 (2014)', 'Hypercholestérolémie'],
+    chronicTreatments: ['Metformine 1000mg', 'Atorvastatine 20mg'],
+    emergencyContact: {
+      name: 'Marième Diouf',
+      relationship: 'Conjointe',
+      phone: '+221 77 788 99 00',
+    },
+    notes: 'Bilan semestriel glycémie à jeun et HbA1c à surveiller.',
+    createdAt: '2022-09-10',
+  },
+  {
+    id: 'pat-4',
+    firstName: 'Aminata',
+    lastName: 'Traoré',
+    gender: 'F',
+    birthDate: '2001-08-19',
+    ssn: '2 751 2001 01234',
+    phone: '+221 77 432 10 98',
+    email: 'aminata.traore@ucad.edu.sn',
+    address: 'Point E, Boulevard de l\'Est, Dakar',
+    bloodGroup: 'AB+',
+    allergies: [],
+    medicalHistory: ['Épisode de paludisme simple traité (2023)'],
+    chronicTreatments: [],
+    emergencyContact: {
+      name: 'Oumou Traoré',
+      relationship: 'Mère',
+      phone: '+221 70 654 32 10',
+    },
+    notes: 'Étudiante à l\'UCAD, certificat d\'aptitude sportive demandé.',
+    createdAt: '2023-09-01',
+  },
+  {
+    id: 'pat-5',
+    firstName: 'Moussa',
+    lastName: 'Sène',
+    gender: 'M',
+    birthDate: '1970-12-05',
+    ssn: '1 751 1970 04512',
+    phone: '+221 70 321 09 87',
+    email: 'moussa.sene@free.sn',
+    address: 'Médina, Rue 6 x 11, Dakar',
+    bloodGroup: 'A-',
+    allergies: ['AINS (Ibuprofène)'],
+    medicalHistory: ['Lombalgie d\'effort récidivante', 'Reflux gastro-œsophagien'],
+    chronicTreatments: ['Oméprazole 20mg'],
+    emergencyContact: {
+      name: 'Khadija Sène',
+      relationship: 'Épouse',
+      phone: '+221 77 111 22 33',
+    },
+    notes: 'Commerçant à Sandaga, travail debout et port de charges.',
+    createdAt: '2022-11-18',
+  },
+  {
+    id: 'pat-6',
+    firstName: 'Khady',
+    lastName: 'Faye',
+    gender: 'F',
+    birthDate: '1987-04-30',
+    ssn: '2 751 1987 03190',
+    phone: '+221 78 987 65 43',
+    email: 'khady.faye@gmail.com',
+    address: 'Ouakam, Cité Avion, Dakar',
+    bloodGroup: 'O-',
+    allergies: ['Arachides'],
+    medicalHistory: ['Hypothyroïdie fruste substituée'],
+    chronicTreatments: ['Lévothyrox 50µg'],
+    emergencyContact: {
+      name: 'Cheikh Faye',
+      relationship: 'Frère',
+      phone: '+221 76 222 33 44',
+    },
+    notes: 'Bilan TSH annuel stable sous traitement.',
+    createdAt: '2023-04-12',
+  },
+  {
+    id: 'pat-7',
+    firstName: 'Babacar',
+    lastName: 'Ndiaye',
+    gender: 'M',
+    birthDate: '2016-09-15',
+    ssn: '1 751 2016 05481',
+    phone: '+221 77 210 98 76',
+    email: 'famille.ndiaye@orange.sn',
+    address: 'Guédiawaye, Hamo 4, Dakar',
+    bloodGroup: 'A+',
+    allergies: [],
+    medicalHistory: ['Rhinopharyngites occasionnelles', 'Programme PEV complet'],
+    chronicTreatments: [],
+    emergencyContact: {
+      name: 'Seynabou Ndiaye',
+      relationship: 'Mère',
+      phone: '+221 77 210 98 76',
+    },
+    notes: 'Enfant suivi au cabinet. Courbe de croissance et vaccins à jour.',
+    createdAt: '2021-06-05',
+  }
+];
+
+export function getInitialAppointments(): Appointment[] {
+  const today = getTodayDateString();
+  
+  // Calculate relative dates: yesterday, tomorrow, +2 days
+  const dToday = new Date(today + 'T00:00:00');
+  
+  const dTomorrow = new Date(dToday);
+  dTomorrow.setDate(dTomorrow.getDate() + 1);
+  const tomorrow = dTomorrow.toISOString().split('T')[0];
+
+  const dAfterTomorrow = new Date(dToday);
+  dAfterTomorrow.setDate(dAfterTomorrow.getDate() + 2);
+  const afterTomorrow = dAfterTomorrow.toISOString().split('T')[0];
+
+  const dYesterday = new Date(dToday);
+  dYesterday.setDate(dYesterday.getDate() - 1);
+  const yesterday = dYesterday.toISOString().split('T')[0];
+
+  return [
+    // Rendez-vous d'aujourd'hui
+    {
+      id: 'apt-1',
+      patientId: 'pat-1',
+      date: today,
+      startTime: '08:30',
+      duration: 30,
+      type: 'consultation',
+      status: 'completed',
+      reason: 'Renouvellement traitement HTA et contrôle tensionnel',
+      notes: 'Tension artérielle à 128/82 mmHg, bon équilibre.',
+      fee: 15000,
+      isPaid: true,
+      paymentMethod: 'wave',
+    },
+    {
+      id: 'apt-2',
+      patientId: 'pat-2',
+      date: today,
+      startTime: '09:15',
+      duration: 30,
+      type: 'urgence',
+      status: 'in_progress',
+      reason: 'Syndrome fébrile, céphalées et frissons (Suspicion paludisme)',
+      notes: 'Test de Diagnostic Rapide (TDR) paludisme en cours.',
+      fee: 15000,
+      isPaid: false,
+      arrivedAt: '09:05',
+    },
+    {
+      id: 'apt-3',
+      patientId: 'pat-3',
+      date: today,
+      startTime: '10:00',
+      duration: 45,
+      type: 'bilan',
+      status: 'waiting',
+      reason: 'Bilan semestriel diabète type 2 et bilan cardio-vasculaire',
+      notes: 'Amène les résultats du laboratoire Pasteur.',
+      fee: 20000,
+      isPaid: false,
+      arrivedAt: '09:45',
+    },
+    {
+      id: 'apt-4',
+      patientId: 'pat-4',
+      date: today,
+      startTime: '11:00',
+      duration: 30,
+      type: 'consultation',
+      status: 'confirmed',
+      reason: 'Certificat médical d\'aptitude aux activités physiques',
+      notes: 'Examen cardio-vasculaire et ostéo-articulaire.',
+      fee: 15000,
+      isPaid: false,
+    },
+    {
+      id: 'apt-5',
+      patientId: 'pat-5',
+      date: today,
+      startTime: '14:00',
+      duration: 30,
+      type: 'suivi',
+      status: 'confirmed',
+      reason: 'Lombalgie aiguë suite à manutention',
+      fee: 15000,
+      isPaid: false,
+    },
+    {
+      id: 'apt-6',
+      patientId: 'pat-6',
+      date: today,
+      startTime: '15:00',
+      duration: 30,
+      type: 'teleconsultation',
+      status: 'confirmed',
+      reason: 'Lecture bilan thyroïdien TSH et réévaluation posologie',
+      fee: 15000,
+      isPaid: true,
+      paymentMethod: 'orange_money',
+    },
+    {
+      id: 'apt-7',
+      patientId: 'pat-7',
+      date: today,
+      startTime: '16:30',
+      duration: 30,
+      type: 'vaccination',
+      status: 'confirmed',
+      reason: 'Rappel vaccinal PEV et contrôle pédiatrique de routine',
+      fee: 15000,
+      isPaid: false,
+    },
+
+    // Rendez-vous de demain
+    {
+      id: 'apt-8',
+      patientId: 'pat-3',
+      date: tomorrow,
+      startTime: '09:00',
+      duration: 30,
+      type: 'suivi',
+      status: 'confirmed',
+      reason: 'Suivi post-adaptation traitement diabète',
+      fee: 15000,
+      isPaid: false,
+    },
+    {
+      id: 'apt-9',
+      patientId: 'pat-1',
+      date: tomorrow,
+      startTime: '10:30',
+      duration: 30,
+      type: 'consultation',
+      status: 'confirmed',
+      reason: 'Visite de contrôle',
+      fee: 15000,
+      isPaid: false,
+    },
+    {
+      id: 'apt-10',
+      patientId: 'pat-5',
+      date: tomorrow,
+      startTime: '14:30',
+      duration: 45,
+      type: 'bilan',
+      status: 'confirmed',
+      reason: 'Point global de santé annuel',
+      fee: 20000,
+      isPaid: false,
+    },
+
+    // Rendez-vous après-demain
+    {
+      id: 'apt-11',
+      patientId: 'pat-2',
+      date: afterTomorrow,
+      startTime: '11:00',
+      duration: 30,
+      type: 'consultation',
+      status: 'confirmed',
+      reason: 'Contrôle respiratoire et prescription de renouvellement',
+      fee: 15000,
+      isPaid: false,
+    },
+
+    // Rendez-vous d'hier (Historique)
+    {
+      id: 'apt-12',
+      patientId: 'pat-4',
+      date: yesterday,
+      startTime: '16:00',
+      duration: 30,
+      type: 'consultation',
+      status: 'completed',
+      reason: 'Examen de routine',
+      fee: 15000,
+      isPaid: true,
+      paymentMethod: 'especes',
+    }
+  ];
+}
+
+export const initialPrescriptions: Prescription[] = [
+  {
+    id: 'presc-1',
+    patientId: 'pat-1',
+    appointmentId: 'apt-1',
+    date: getTodayDateString(),
+    medications: [
+      {
+        id: 'med-1',
+        name: 'Amlodipine 5 mg',
+        dosage: '1 comprimé',
+        frequency: '1 fois par jour le matin',
+        duration: '3 mois',
+        instructions: 'À prendre avec un verre d\'eau au réveil.',
+      },
+      {
+        id: 'med-2',
+        name: 'Paracétamol 1 g',
+        dosage: '1 comprimé',
+        frequency: '1 à 3 fois par jour si céphalée ou douleur',
+        duration: '5 jours',
+        instructions: 'Espacer les prises d\'au moins 6 heures.',
+      }
+    ],
+    recommendations: 'Poursuivre le régime hyposodé, activité physique modérée (marche 30 min/jour) et contrôle de la tension.',
+    createdAt: getTodayDateString(),
+  }
+];
+
+export const initialConsultations: Consultation[] = [
+  {
+    id: 'cons-1',
+    appointmentId: 'apt-1',
+    patientId: 'pat-1',
+    date: getTodayDateString(),
+    time: '08:30',
+    reason: 'Renouvellement traitement HTA et contrôle tensionnel',
+    vitals: {
+      systolicBp: 128,
+      diastolicBp: 82,
+      heartRate: 68,
+      weight: 78.5,
+      height: 178,
+      temperature: 36.8,
+    },
+    soap: {
+      subjective: 'Patient asymptomatique. Pas de céphalées ni vertiges. Bonne observance du traitement par Amlodipine.',
+      objective: 'TA : 128/82 mmHg aux deux bras. Pouls régulier à 68 bpm. Auscultation cardio-pulmonaire normale, pas de râles.',
+      assessment: 'Hypertension artérielle bien équilibrée sous monothérapie.',
+      plan: 'Reconduction de l\'Amlodipine 5mg pour 3 mois. Bilan rénal et ionogramme de contrôle prescrit dans 6 mois.',
+    },
+    prescriptionId: 'presc-1',
+    notes: 'Revoir dans 6 mois pour contrôle biologique.',
+  }
+];
