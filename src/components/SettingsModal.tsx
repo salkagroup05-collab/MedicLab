@@ -337,9 +337,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </label>
                   <input
                     type="text"
-                    disabled
+                    placeholder="+221 33 825 40 50"
                     value={phone}
-                    className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-lg text-slate-600 font-mono"
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
               </div>
