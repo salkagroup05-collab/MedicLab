@@ -1,9 +1,17 @@
 import React, { useState } from 'react';
-import { X, Save, Download, Upload, RotateCcw, Stethoscope, Check, MessageCircle, LogOut } from 'lucide-react';
+import { X, Save, Download, Upload, RotateCcw, Stethoscope, Check, MessageCircle, LogOut, BadgeCheck } from 'lucide-react';
 import { DoctorProfile } from '../types';
 import { DEFAULT_WHATSAPP_TEMPLATE } from '../utils/whatsappUtils';
+import { getTrialDaysRemaining } from '../utils/subscriptionUtils';
 import { ImportResult } from '../lib/db';
 import { Modal } from './shared/Modal';
+
+const SUBSCRIPTION_STATUS_LABELS: Record<DoctorProfile['subscriptionStatus'], string> = {
+  trialing: "Essai gratuit en cours",
+  active: 'Actif',
+  expired: 'Expiré',
+  cancelled: 'Résilié',
+};
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -45,6 +53,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   if (!isOpen) return null;
+
+  const trialDaysRemaining = getTrialDaysRemaining(doctor);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -324,6 +334,34 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </button>
             </div>
           </form>
+
+          {/* Abonnement (lecture seule, géré manuellement) */}
+          <div className="pt-4 border-t border-slate-200 space-y-3">
+            <span className="font-bold text-slate-800 uppercase tracking-wider block">
+              Abonnement
+            </span>
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                <BadgeCheck className="w-4.5 h-4.5" />
+              </div>
+              <div>
+                <p className="font-bold text-slate-900 text-xs">
+                  Statut : {SUBSCRIPTION_STATUS_LABELS[doctor.subscriptionStatus]}
+                </p>
+                {doctor.subscriptionStatus === 'trialing' && doctor.trialEndsAt && (
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Fin de l'essai le{' '}
+                    {new Date(doctor.trialEndsAt).toLocaleDateString('fr-FR', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                    {trialDaysRemaining !== null && ` (${trialDaysRemaining} jour${trialDaysRemaining > 1 ? 's' : ''} restant${trialDaysRemaining > 1 ? 's' : ''})`}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
 
           {/* Backup, Export & Reset */}
           <div className="pt-4 border-t border-slate-200 space-y-3">

@@ -31,6 +31,7 @@ import {
 import { supabase } from './lib/supabaseClient';
 import { formatDateFr, getTodayDateString } from './utils/dateUtils';
 import { findOverlappingAppointment } from './utils/appointmentUtils';
+import { hasActiveSubscription, getTrialDaysRemaining } from './utils/subscriptionUtils';
 import { Header } from './components/Header';
 import { MainTab, Navigation } from './components/Navigation';
 import { AgendaView } from './components/AgendaView';
@@ -43,9 +44,10 @@ import { ConsultationModal } from './components/ConsultationModal';
 import { PrescriptionModal } from './components/PrescriptionModal';
 import { PatientFormModal } from './components/PatientFormModal';
 import { SettingsModal } from './components/SettingsModal';
+import { SubscriptionRequiredScreen } from './components/SubscriptionRequiredScreen';
 import { WhatsAppReminderModal } from './components/WhatsAppReminderModal';
 import { getApproachingAppointmentsData } from './utils/whatsappUtils';
-import { Loader2 } from 'lucide-react';
+import { Clock, Loader2 } from 'lucide-react';
 
 interface AppProps {
   session: Session;
@@ -490,6 +492,12 @@ export default function App({ session }: AppProps) {
     );
   }
 
+  if (!hasActiveSubscription(doctor)) {
+    return <SubscriptionRequiredScreen doctor={doctor} onSignOut={handleSignOut} />;
+  }
+
+  const trialDaysRemaining = getTrialDaysRemaining(doctor);
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900 print:bg-white print:min-h-0">
       {/* Top Header & Navigation - Hidden when printing documents */}
@@ -497,6 +505,17 @@ export default function App({ session }: AppProps) {
         {errorMessage && (
           <div className="bg-rose-600 text-white text-xs font-semibold text-center py-2 px-4">
             {errorMessage}
+          </div>
+        )}
+
+        {doctor.subscriptionStatus === 'trialing' && trialDaysRemaining !== null && (
+          <div className="bg-amber-50 border-b border-amber-200 text-amber-900 text-xs font-semibold text-center py-2 px-4 flex items-center justify-center gap-1.5">
+            <Clock className="w-3.5 h-3.5" />
+            <span>
+              {trialDaysRemaining > 0
+                ? `Il vous reste ${trialDaysRemaining} jour${trialDaysRemaining > 1 ? 's' : ''} d'essai gratuit`
+                : "Votre essai gratuit se termine aujourd'hui"}
+            </span>
           </div>
         )}
 

@@ -24,6 +24,8 @@ export type PaymentMethod =
   | 'tiers_payant' 
   | 'en_attente';
 
+export type SubscriptionStatus = 'trialing' | 'active' | 'expired' | 'cancelled';
+
 export interface DoctorProfile {
   id: string;
   name: string;
@@ -40,6 +42,8 @@ export interface DoctorProfile {
   whatsappReminderHours?: number; // e.g. 24 or 48 hours before
   whatsappCustomTemplate?: string;
   whatsappAutoPrompt?: boolean;
+  subscriptionStatus: SubscriptionStatus;
+  trialEndsAt?: string; // ISO timestamp, uniquement pertinent quand subscriptionStatus === 'trialing'
 }
 
 export interface Patient {

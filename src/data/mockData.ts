@@ -15,6 +15,7 @@ export const initialDoctorProfile: DoctorProfile = {
   consultationFee: 15000,
   defaultDuration: 30,
   whatsappReminderHours: 24,
+  subscriptionStatus: 'active',
 };
 
 export const initialPatients: Patient[] = [

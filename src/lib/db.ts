@@ -39,6 +39,8 @@ interface PractitionerRow {
   whatsapp_reminder_hours: number | null;
   whatsapp_custom_template: string | null;
   whatsapp_auto_prompt: boolean | null;
+  subscription_status: DoctorProfile['subscriptionStatus'];
+  trial_ends_at: string | null;
 }
 
 function rowToDoctorProfile(row: PractitionerRow): DoctorProfile {
@@ -58,6 +60,8 @@ function rowToDoctorProfile(row: PractitionerRow): DoctorProfile {
     whatsappReminderHours: row.whatsapp_reminder_hours ?? undefined,
     whatsappCustomTemplate: row.whatsapp_custom_template ?? undefined,
     whatsappAutoPrompt: row.whatsapp_auto_prompt ?? undefined,
+    subscriptionStatus: row.subscription_status,
+    trialEndsAt: row.trial_ends_at ?? undefined,
   };
 }
 
