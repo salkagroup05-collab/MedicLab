@@ -5,6 +5,7 @@ import {
   DoctorProfile,
   Patient,
   Prescription,
+  PublicPractitioner,
 } from '../types';
 import {
   getInitialAppointments,
@@ -41,6 +42,9 @@ interface PractitionerRow {
   whatsapp_auto_prompt: boolean | null;
   subscription_status: DoctorProfile['subscriptionStatus'];
   trial_ends_at: string | null;
+  is_public_listed: boolean;
+  public_bio: string;
+  accepts_new_patients: boolean;
 }
 
 function rowToDoctorProfile(row: PractitionerRow): DoctorProfile {
@@ -62,6 +66,9 @@ function rowToDoctorProfile(row: PractitionerRow): DoctorProfile {
     whatsappAutoPrompt: row.whatsapp_auto_prompt ?? undefined,
     subscriptionStatus: row.subscription_status,
     trialEndsAt: row.trial_ends_at ?? undefined,
+    isPublicListed: row.is_public_listed,
+    publicBio: row.public_bio,
+    acceptsNewPatients: row.accepts_new_patients,
   };
 }
 
@@ -81,6 +88,9 @@ function doctorProfileToRow(patch: Partial<DoctorProfile>): Record<string, unkno
   if ('whatsappReminderHours' in patch) row.whatsapp_reminder_hours = patch.whatsappReminderHours ?? null;
   if ('whatsappCustomTemplate' in patch) row.whatsapp_custom_template = patch.whatsappCustomTemplate ?? null;
   if ('whatsappAutoPrompt' in patch) row.whatsapp_auto_prompt = patch.whatsappAutoPrompt ?? null;
+  if ('isPublicListed' in patch) row.is_public_listed = patch.isPublicListed;
+  if ('publicBio' in patch) row.public_bio = patch.publicBio;
+  if ('acceptsNewPatients' in patch) row.accepts_new_patients = patch.acceptsNewPatients;
   return row;
 }
 
@@ -711,6 +721,9 @@ export async function resetToDemoData(practitionerId: string): Promise<{
       whatsapp_reminder_hours: initialDoctorProfile.whatsappReminderHours ?? null,
       whatsapp_custom_template: null,
       whatsapp_auto_prompt: null,
+      is_public_listed: initialDoctorProfile.isPublicListed,
+      public_bio: initialDoctorProfile.publicBio,
+      accepts_new_patients: initialDoctorProfile.acceptsNewPatients,
     })
     .eq('id', practitionerId)
     .select()
@@ -718,4 +731,40 @@ export async function resetToDemoData(practitionerId: string): Promise<{
   if (error) throw error;
 
   return { doctor: rowToDoctorProfile(data as PractitionerRow), patients, appointments, prescriptions, consultations };
+}
+
+// ---------------------------------------------------------------------------
+// Annuaire public (accès anonyme, lecture seule via RPC security definer)
+// ---------------------------------------------------------------------------
+
+interface PublicPractitionerRow {
+  id: string;
+  name: string;
+  title: string;
+  specialty: string;
+  phone: string;
+  address: string;
+  city: string;
+  public_bio: string;
+  accepts_new_patients: boolean;
+}
+
+function rowToPublicPractitioner(row: PublicPractitionerRow): PublicPractitioner {
+  return {
+    id: row.id,
+    name: row.name,
+    title: row.title,
+    specialty: row.specialty,
+    phone: row.phone,
+    address: row.address,
+    city: row.city,
+    publicBio: row.public_bio,
+    acceptsNewPatients: row.accepts_new_patients,
+  };
+}
+
+export async function loadPublicPractitioners(): Promise<PublicPractitioner[]> {
+  const { data, error } = await supabase.rpc('list_public_practitioners');
+  if (error) throw error;
+  return ((data ?? []) as PublicPractitionerRow[]).map(rowToPublicPractitioner);
 }

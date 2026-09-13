@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { X, Save, Download, Upload, RotateCcw, Stethoscope, Check, MessageCircle, LogOut, BadgeCheck } from 'lucide-react';
+import { X, Save, Download, Upload, RotateCcw, Stethoscope, Check, MessageCircle, LogOut, BadgeCheck, Globe2 } from 'lucide-react';
 import { DoctorProfile } from '../types';
 import { DEFAULT_WHATSAPP_TEMPLATE } from '../utils/whatsappUtils';
 import { getTrialDaysRemaining } from '../utils/subscriptionUtils';
 import { ImportResult } from '../lib/db';
+import { MEDICAL_SPECIALTIES } from '../constants';
 import { Modal } from './shared/Modal';
 
 const SUBSCRIPTION_STATUS_LABELS: Record<DoctorProfile['subscriptionStatus'], string> = {
@@ -36,7 +37,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const [name, setName] = useState(doctor.name);
   const [title, setTitle] = useState(doctor.title);
-  const [specialty, setSpecialty] = useState(doctor.specialty);
+  const isKnownSpecialty = MEDICAL_SPECIALTIES.includes(doctor.specialty);
+  const [specialtySelect, setSpecialtySelect] = useState(isKnownSpecialty ? doctor.specialty : 'Autre');
+  const [specialtyOther, setSpecialtyOther] = useState(isKnownSpecialty ? '' : doctor.specialty);
+  const specialty = specialtySelect === 'Autre' ? specialtyOther : specialtySelect;
   const [onms, setOnms] = useState(doctor.onms || '');
   const [ninea, setNinea] = useState(doctor.ninea || '');
   const [phone, setPhone] = useState(doctor.phone);
@@ -49,6 +53,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [whatsappCustomTemplate, setWhatsappCustomTemplate] = useState(
     doctor.whatsappCustomTemplate || DEFAULT_WHATSAPP_TEMPLATE
   );
+  const [isPublicListed, setIsPublicListed] = useState(doctor.isPublicListed);
+  const [acceptsNewPatients, setAcceptsNewPatients] = useState(doctor.acceptsNewPatients);
+  const [publicBio, setPublicBio] = useState(doctor.publicBio);
 
   const [savedSuccess, setSavedSuccess] = useState(false);
 
@@ -58,21 +65,34 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmedCity = city.trim();
+    const trimmedSpecialty = specialty.trim();
+
+    if (isPublicListed && (!trimmedCity || !trimmedSpecialty)) {
+      alert(
+        "Pour apparaître dans l'annuaire public, la ville et la spécialité du cabinet doivent être renseignées."
+      );
+      return;
+    }
+
     const updated: DoctorProfile = {
       ...doctor,
       name: name.trim(),
       title,
-      specialty: specialty.trim(),
+      specialty: trimmedSpecialty,
       onms: onms.trim(),
       ninea: ninea.trim(),
       phone: phone.trim(),
       email: email.trim(),
       address: address.trim(),
-      city: city.trim(),
+      city: trimmedCity,
       consultationFee: Number(consultationFee),
       defaultDuration: Number(defaultDuration),
       whatsappReminderHours: Number(whatsappReminderHours),
       whatsappCustomTemplate,
+      isPublicListed,
+      publicBio: publicBio.trim(),
+      acceptsNewPatients,
     };
     onSaveDoctor(updated);
     setSavedSuccess(true);
@@ -163,13 +183,29 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">Spécialité *</label>
-                <input
-                  type="text"
+                <select
                   required
-                  value={specialty}
-                  onChange={(e) => setSpecialty(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500"
-                />
+                  value={specialtySelect}
+                  onChange={(e) => setSpecialtySelect(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white"
+                >
+                  {MEDICAL_SPECIALTIES.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                  <option value="Autre">Autre (préciser)</option>
+                </select>
+                {specialtySelect === 'Autre' && (
+                  <input
+                    type="text"
+                    required
+                    placeholder="Précisez votre spécialité"
+                    value={specialtyOther}
+                    onChange={(e) => setSpecialtyOther(e.target.value)}
+                    className="w-full mt-1.5 px-3 py-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500"
+                  />
+                )}
               </div>
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">N° Ordre des Médecins (ONMS) *</label>
@@ -322,6 +358,67 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   Variables disponibles : {'{civilite}'}, {'{nom}'}, {'{prenom}'}, {'{date}'}, {'{heure}'}, {'{docteur}'}, {'{specialite}'}, {'{adresse}'}, {'{telephone}'}, {'{motif}'}
                 </p>
               </div>
+            </div>
+
+            {/* Annuaire Public MédicLab */}
+            <div className="bg-indigo-50/70 border border-indigo-200 rounded-xl p-4 space-y-3 mt-4">
+              <div className="flex items-center gap-2">
+                <Globe2 className="w-5 h-5 text-indigo-600" />
+                <h4 className="font-bold text-slate-900 text-xs">Annuaire Public MédicLab</h4>
+              </div>
+
+              <label className="flex items-start gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isPublicListed}
+                  onChange={(e) => setIsPublicListed(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-indigo-600 cursor-pointer"
+                />
+                <span>
+                  <span className="font-semibold text-slate-800 block">Être visible dans l'annuaire</span>
+                  <span className="text-[11px] text-slate-500">
+                    Permet aux patients (non connectés) de trouver votre cabinet depuis la page publique
+                    "Trouver un professionnel" de MédicLab.
+                  </span>
+                </span>
+              </label>
+
+              {isPublicListed && (
+                <div className="pl-6.5 space-y-3">
+                  <label className="flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={acceptsNewPatients}
+                      onChange={(e) => setAcceptsNewPatients(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 accent-indigo-600 cursor-pointer"
+                    />
+                    <span className="font-semibold text-slate-800">J'accepte de nouveaux patients</span>
+                  </label>
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Présentation publique
+                    </label>
+                    <textarea
+                      rows={3}
+                      maxLength={500}
+                      placeholder="Quelques lignes sur votre pratique, vos horaires, votre approche..."
+                      value={publicBio}
+                      onChange={(e) => setPublicBio(e.target.value)}
+                      className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-indigo-500 leading-relaxed"
+                    />
+                    <p className="text-[11px] text-slate-500 mt-1">{publicBio.length} / 500 caractères</p>
+                  </div>
+
+                  <div className="p-2.5 bg-white border border-indigo-200 rounded-lg text-[11px] text-slate-600 leading-relaxed">
+                    <span className="font-semibold text-slate-700">Deviennent publiques :</span> nom, titre,
+                    spécialité, ville, adresse, téléphone, présentation.
+                    <br />
+                    <span className="font-semibold text-slate-700">Jamais publiées :</span> email, N° Ordre
+                    (ONMS), N° NINEA, statut d'abonnement.
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-2 pt-2">

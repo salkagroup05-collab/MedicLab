@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { Loader2 } from 'lucide-react';
 import App from './App.tsx';
 import { AuthScreen } from './components/AuthScreen.tsx';
+import { PublicDirectoryView } from './components/public/PublicDirectoryView.tsx';
 import { useSession } from './hooks/useSession.ts';
 import './index.css';
 
@@ -14,10 +15,15 @@ function SplashScreen() {
   );
 }
 
-function Root() {
+function AuthenticatedRoot() {
   const { session, loading } = useSession();
   if (loading) return <SplashScreen />;
   return session ? <App session={session} /> : <AuthScreen />;
+}
+
+function Root() {
+  if (window.location.pathname === '/annuaire') return <PublicDirectoryView />;
+  return <AuthenticatedRoot />;
 }
 
 createRoot(document.getElementById('root')!).render(

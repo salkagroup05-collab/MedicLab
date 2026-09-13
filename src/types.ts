@@ -44,6 +44,25 @@ export interface DoctorProfile {
   whatsappAutoPrompt?: boolean;
   subscriptionStatus: SubscriptionStatus;
   trialEndsAt?: string; // ISO timestamp, uniquement pertinent quand subscriptionStatus === 'trialing'
+  isPublicListed: boolean; // Opt-in : visible dans l'annuaire public "Trouver un professionnel"
+  publicBio: string;
+  acceptsNewPatients: boolean;
+}
+
+// Sous-ensemble volontairement restreint de DoctorProfile exposé par l'annuaire public
+// (RPC list_public_practitioners) : jamais l'email, le N° Ordre, le NINEA, ni les
+// données d'abonnement. Séparé de DoctorProfile pour que ce périmètre "sûr" soit
+// explicite dans le code, pas seulement au niveau SQL.
+export interface PublicPractitioner {
+  id: string;
+  name: string;
+  title: string;
+  specialty: string;
+  phone: string;
+  address: string;
+  city: string;
+  publicBio: string;
+  acceptsNewPatients: boolean;
 }
 
 export interface Patient {

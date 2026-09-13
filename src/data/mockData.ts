@@ -16,6 +16,9 @@ export const initialDoctorProfile: DoctorProfile = {
   defaultDuration: 30,
   whatsappReminderHours: 24,
   subscriptionStatus: 'active',
+  isPublicListed: false,
+  publicBio: '',
+  acceptsNewPatients: true,
 };
 
 export const initialPatients: Patient[] = [

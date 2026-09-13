@@ -99,3 +99,34 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = PAYMENT_METH
   (acc, m) => ({ ...acc, [m.value]: m.label }),
   {} as Record<PaymentMethod, string>
 );
+
+// Liste curée des spécialités médicales, utilisée à la fois par le sélecteur de spécialité
+// dans les Paramètres praticien et par le filtre de l'annuaire public. Indépendante de
+// SPECIALTY_PRESETS (ReferralLetterModal.tsx), qui associe à chaque spécialité un texte de
+// lettre de correspondance différent et exclut délibérément "Médecine Générale" — ne pas
+// fusionner ces deux listes.
+export const MEDICAL_SPECIALTIES: string[] = [
+  'Médecine Générale',
+  'Cardiologie',
+  'Dermatologie',
+  'Endocrinologie & Diabétologie',
+  'Gastro-entérologie',
+  'Gynécologie-Obstétrique',
+  'Médecine Interne',
+  'Néphrologie',
+  'Neurologie',
+  'Oncologie',
+  'Ophtalmologie',
+  'ORL (Oto-Rhino-Laryngologie)',
+  'Orthopédie & Traumatologie',
+  'Pédiatrie',
+  'Pneumologie',
+  'Psychiatrie',
+  'Radiologie & Imagerie médicale',
+  'Rhumatologie',
+  'Urologie',
+  'Chirurgie Générale',
+  'Chirurgie Dentaire',
+  'Kinésithérapie',
+  'Sage-femme',
+];

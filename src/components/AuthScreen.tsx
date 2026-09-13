@@ -218,6 +218,13 @@ export const AuthScreen: React.FC = () => {
             )}
           </div>
         </div>
+
+        <p className="text-center text-xs text-slate-500 mt-4">
+          Vous êtes un patient ?{' '}
+          <a href="/annuaire" className="font-semibold text-blue-600 hover:text-blue-800">
+            Trouver un professionnel de santé →
+          </a>
+        </p>
       </div>
     </div>
   );
