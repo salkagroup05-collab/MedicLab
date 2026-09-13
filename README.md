@@ -1,7 +1,7 @@
 # Cabinet Santé - Agenda & Gestion Médicale
 
 ## Présentation générale
-**Cabinet Santé** est une application web complète et moderne conçue pour les professionnels de santé et cabinets médicaux (notamment adaptée à l'exercice libéral et aux contextes médicaux francophones et africains, avec prise en charge du FCFA, Wave, Orange Money, etc.).
+**Cabinet Santé** est un SaaS multi-cabinets conçu pour les professionnels de santé indépendants (notamment adapté à l'exercice libéral et aux contextes médicaux francophones et africains, avec prise en charge du FCFA, Wave, Orange Money, etc.). Chaque praticien crée son propre compte et dispose d'un espace totalement isolé (patients, rendez-vous, consultations, ordonnances) grâce à l'authentification et à l'isolation multi-tenant Supabase.
 
 Elle permet de gérer efficacement le flux quotidien du cabinet : de la prise de rendez-vous jusqu'au suivi post-consultation, en passant par la gestion de la salle d'attente, les dossiers médicaux patients, la rédaction d'ordonnances imprimables et les rappels WhatsApp aux patients.
 
@@ -77,7 +77,13 @@ Elle permet de gérer efficacement le flux quotidien du cabinet : de la prise de
 - Configuration des coordonnées du médecin (Nom, titre, spécialité, N° ONMS / NINEA / RPPS / ADELI, tarif par défaut).
 - Personnalisation du modèle de message de rappel WhatsApp.
 - **Sauvegarde et Restauration** : export de toutes les données du cabinet au format JSON et importation sécurisée.
-- Réinitialisation avec jeu de données de démonstration pour les tests.
+- Réinitialisation avec jeu de données de démonstration pour les tests (avec confirmation avant écrasement des données réelles).
+- Déconnexion du compte.
+
+### 9. 🔐 Authentification & Isolation Multi-Cabinets
+- Inscription (avec confirmation obligatoire par email) et connexion par email/mot de passe.
+- Réinitialisation du mot de passe oublié.
+- Chaque compte praticien obtient automatiquement son propre espace à l'inscription, strictement isolé des autres cabinets au niveau de la base de données (Row Level Security).
 
 ---
 
@@ -90,9 +96,10 @@ Elle permet de gérer efficacement le flux quotidien du cabinet : de la prise de
 | **Styles** | Tailwind CSS v4 | Design épuré, responsive et adapté aux écrans médicaux |
 | **Animations** | Motion (`motion/react`) | Transitions fluides entre vues et modales |
 | **Icônes** | Lucide React | Iconographie médicale et fonctionnelle cohérente |
-| **Persistance** | LocalStorage | Sauvegarde locale immédiate, hors-ligne et sans latence |
+| **Backend** | Supabase (Postgres + Auth) | Authentification, base de données et API générée automatiquement |
+| **Isolation des données** | Row Level Security (Postgres) | Chaque praticien ne peut lire/écrire que ses propres données |
 
-> **Important** : Cabinet Santé est une application **100% cliente**, sans backend ni base de données. Toutes les données (patients, rendez-vous, consultations, ordonnances) sont stockées dans le `LocalStorage` du navigateur. Cela signifie qu'il n'y a actuellement ni authentification, ni chiffrement des données, ni synchronisation entre appareils — à garder à l'esprit pour un usage en conditions réelles avec des données médicales sensibles.
+> **Important** : Cabinet Santé est un SaaS multi-cabinets. Chaque professionnel de santé crée son propre compte (email + mot de passe, confirmation par email) et toutes ses données (patients, rendez-vous, consultations, ordonnances) sont stockées côté serveur dans une base Postgres Supabase, isolées des autres cabinets par des policies RLS. Un backend Supabase (projet + variables d'environnement) est donc requis pour faire fonctionner l'application — voir la section Démarrage ci-dessous. L'abonnement payant n'est pas encore implémenté à ce stade.
 
 ---
 
@@ -104,13 +111,22 @@ Elle permet de gérer efficacement le flux quotidien du cabinet : de la prise de
 ├── package.json                     # Dépendances et scripts npm
 ├── tsconfig.json                    # Configuration TypeScript
 ├── vite.config.ts                   # Configuration Vite avec Tailwind CSS
+├── supabase/
+│   └── migrations/
+│       └── 0001_init.sql            # Schéma Postgres, RLS et trigger de création de cabinet
 ├── src/
-│   ├── main.tsx                     # Démarrage de l'application React
+│   ├── main.tsx                     # Démarrage de l'app + gate d'authentification (session ? App : AuthScreen)
 │   ├── App.tsx                      # Composant racine, routage d'état et modales
 │   ├── index.css                    # Styles globaux Tailwind
 │   ├── types.ts                     # Interfaces TypeScript (Patient, Appointment, Consultation, etc.)
 │   ├── constants.ts                 # Constantes partagées (tarif par défaut, etc.)
+│   ├── lib/
+│   │   ├── supabaseClient.ts        # Instance du client Supabase (Auth + Postgres)
+│   │   └── db.ts                    # Couche CRUD (mapping snake_case ↔ camelCase, export/import/reset)
+│   ├── hooks/
+│   │   └── useSession.ts            # Session Supabase Auth courante (getSession + onAuthStateChange)
 │   ├── components/
+│   │   ├── AuthScreen.tsx           # Écran de connexion / inscription / mot de passe oublié
 │   │   ├── Header.tsx               # En-tête avec indicateurs du jour et actions rapides
 │   │   ├── Navigation.tsx           # Barre de navigation principale (Agenda, Attente, Patients, etc.)
 │   │   ├── AgendaView.tsx           # Vue planning (jour / semaine / mois)
@@ -126,13 +142,12 @@ Elle permet de gérer efficacement le flux quotidien du cabinet : de la prise de
 │   │   ├── PrescriptionsListView.tsx# Historique global des ordonnances
 │   │   ├── WhatsAppReminderModal.tsx# Centre d'envoi des rappels WhatsApp
 │   │   ├── StatsView.tsx            # Métriques d'activité et finances
-│   │   └── SettingsModal.tsx        # Paramètres praticien, import/export JSON
+│   │   └── SettingsModal.tsx        # Paramètres praticien, import/export JSON, déconnexion
 │   ├── data/
 │   │   └── mockData.ts              # Données de démonstration initiales
 │   └── utils/
 │       ├── dateUtils.ts             # Fonctions de manipulation et formatage de dates
 │       ├── pdfExport.ts             # Moteur de génération vectorielle de PDF (jsPDF)
-│       ├── storage.ts               # Couche d'accès et persistance LocalStorage
 │       ├── appointmentUtils.ts      # Détection de chevauchement de rendez-vous
 │       └── whatsappUtils.ts         # Détection des RDV proches et génération de liens WhatsApp
 ```
@@ -141,27 +156,38 @@ Elle permet de gérer efficacement le flux quotidien du cabinet : de la prise de
 
 ## Démarrage et Utilisation
 
-**Prérequis** : Node.js
+**Prérequis** : Node.js, un compte [Supabase](https://supabase.com) (gratuit).
 
-1. **Installer les dépendances** :
+1. **Créer le backend Supabase** :
+   - Créez un projet sur [supabase.com](https://supabase.com).
+   - Dans l'éditeur SQL du projet, exécutez le contenu de `supabase/migrations/0001_init.sql` (schéma, RLS et trigger de création automatique du cabinet).
+   - Dans *Authentication → Providers → Email*, activez la confirmation d'email obligatoire.
+   - Récupérez l'URL du projet et la clé publique `anon` dans *Project Settings → API*.
+
+2. **Configurer les variables d'environnement** :
+   ```bash
+   cp .env.example .env.local
+   ```
+   Puis renseignez `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` dans `.env.local`.
+
+3. **Installer les dépendances** :
    ```bash
    npm install
    ```
 
-2. **Lancement en développement** :
+4. **Lancement en développement** :
    ```bash
    npm run dev
    ```
-   L'application s'exécute sur le port `3000`.
+   L'application s'exécute sur le port `3000`. Créez un compte via l'écran de connexion pour accéder à votre cabinet.
 
-3. **Vérification du code** :
+5. **Vérification du code** :
    ```bash
    npm run lint
+   npm run typecheck
    ```
 
-4. **Génération de la version de production** :
+6. **Génération de la version de production** :
    ```bash
    npm run build
    ```
-
-Aucune variable d'environnement n'est requise pour faire fonctionner l'application (voir `.env.example`).

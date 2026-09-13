@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { X, Save, Download, Upload, RotateCcw, Stethoscope, Check, MessageCircle } from 'lucide-react';
+import { X, Save, Download, Upload, RotateCcw, Stethoscope, Check, MessageCircle, LogOut } from 'lucide-react';
 import { DoctorProfile } from '../types';
 import { DEFAULT_WHATSAPP_TEMPLATE } from '../utils/whatsappUtils';
-import { ImportResult } from '../utils/storage';
+import { ImportResult } from '../lib/db';
 import { Modal } from './shared/Modal';
 
 interface SettingsModalProps {
@@ -10,9 +10,10 @@ interface SettingsModalProps {
   onClose: () => void;
   doctor: DoctorProfile;
   onSaveDoctor: (profile: DoctorProfile) => void;
-  onExportData: () => void;
-  onImportData: (jsonString: string) => ImportResult;
-  onResetDemo: () => void;
+  onExportData: () => Promise<void>;
+  onImportData: (jsonString: string) => Promise<ImportResult>;
+  onResetDemo: () => Promise<void>;
+  onSignOut: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -23,6 +24,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onExportData,
   onImportData,
   onResetDemo,
+  onSignOut,
 }) => {
   const [name, setName] = useState(doctor.name);
   const [title, setTitle] = useState(doctor.title);
@@ -72,10 +74,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const content = event.target?.result as string;
       if (content) {
-        const result = onImportData(content);
+        const result = await onImportData(content);
         if (result.success) {
           const summary = `Données restaurées : ${result.imported.patients} patient(s), ${result.imported.appointments} rendez-vous, ${result.imported.prescriptions} ordonnance(s), ${result.imported.consultations} consultation(s).`;
           const warning = result.errors.length > 0 ? `\n\nAttention :\n- ${result.errors.join('\n- ')}` : '';
@@ -365,13 +367,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               {/* Reset to Demo */}
               <button
                 type="button"
-                onClick={() => {
+                onClick={async () => {
                   if (
                     confirm(
-                      'Êtes-vous certain de vouloir réinitialiser l\'application avec les données médicales de démonstration ?'
+                      'Êtes-vous certain de vouloir réinitialiser l\'application avec les données médicales de démonstration ? Toutes vos données réelles (patients, rendez-vous, ordonnances, consultations) seront définitivement supprimées.'
                     )
                   ) {
-                    onResetDemo();
+                    await onResetDemo();
                     alert('Données de démonstration réinitialisées avec succès.');
                     onClose();
                   }
@@ -390,7 +392,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
         </div>
 
-        <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex justify-end">
+        <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={onSignOut}
+            className="px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Déconnexion</span>
+          </button>
           <button
             type="button"
             onClick={onClose}

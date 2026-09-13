@@ -101,7 +101,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
       .filter(Boolean);
 
     const savedPatient: Patient = {
-      id: initialPatient?.id || `pat-${Date.now()}`,
+      id: initialPatient?.id || '',
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       gender,

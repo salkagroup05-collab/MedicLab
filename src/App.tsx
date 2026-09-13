@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import type { Session } from '@supabase/supabase-js';
 import {
   Appointment,
   AppointmentStatus,
@@ -9,6 +10,10 @@ import {
   Prescription,
 } from './types';
 import {
+  createAppointment,
+  createPatient,
+  createPrescription,
+  deleteAppointment,
   exportCabinetData,
   ImportResult,
   importCabinetData,
@@ -18,15 +23,14 @@ import {
   loadPatients,
   loadPrescriptions,
   resetToDemoData,
-  saveAppointments,
-  saveConsultations,
-  saveDoctorProfile,
-  savePatients,
-  savePrescriptions,
-} from './utils/storage';
+  updateAppointment,
+  updateDoctorProfile,
+  updatePatient,
+  upsertConsultation,
+} from './lib/db';
+import { supabase } from './lib/supabaseClient';
 import { formatDateFr, getTodayDateString } from './utils/dateUtils';
 import { findOverlappingAppointment } from './utils/appointmentUtils';
-import { useStorageSync } from './hooks/useStorageSync';
 import { Header } from './components/Header';
 import { MainTab, Navigation } from './components/Navigation';
 import { AgendaView } from './components/AgendaView';
@@ -41,14 +45,59 @@ import { PatientFormModal } from './components/PatientFormModal';
 import { SettingsModal } from './components/SettingsModal';
 import { WhatsAppReminderModal } from './components/WhatsAppReminderModal';
 import { getApproachingAppointmentsData } from './utils/whatsappUtils';
+import { Loader2 } from 'lucide-react';
 
-export default function App() {
+interface AppProps {
+  session: Session;
+}
+
+export default function App({ session }: AppProps) {
+  const practitionerId = session.user.id;
+
   // Main data state
-  const [doctor, setDoctor] = useState<DoctorProfile>(loadDoctorProfile);
-  const [patients, setPatients] = useState<Patient[]>(loadPatients);
-  const [appointments, setAppointments] = useState<Appointment[]>(loadAppointments);
-  const [prescriptions, setPrescriptions] = useState<Prescription[]>(loadPrescriptions);
-  const [consultations, setConsultations] = useState<Consultation[]>(loadConsultations);
+  const [doctor, setDoctor] = useState<DoctorProfile | null>(null);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+  const [consultations, setConsultations] = useState<Consultation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const showError = (message: string) => {
+    setErrorMessage(message);
+    setTimeout(() => setErrorMessage(null), 5000);
+  };
+
+  // Chargement initial des données du cabinet du praticien connecté
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoading(true);
+    Promise.all([
+      loadDoctorProfile(practitionerId),
+      loadPatients(practitionerId),
+      loadAppointments(practitionerId),
+      loadPrescriptions(practitionerId),
+      loadConsultations(practitionerId),
+    ])
+      .then(([doctorData, patientsData, appointmentsData, prescriptionsData, consultationsData]) => {
+        if (cancelled) return;
+        setDoctor(doctorData);
+        setPatients(patientsData);
+        setAppointments(appointmentsData);
+        setPrescriptions(prescriptionsData);
+        setConsultations(consultationsData);
+      })
+      .catch((err) => {
+        console.error('Failed to load cabinet data:', err);
+        if (!cancelled) showError('Erreur lors du chargement des données du cabinet.');
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [practitionerId]);
 
   // Active navigation tab
   const [activeTab, setActiveTab] = useState<MainTab>('agenda');
@@ -78,48 +127,6 @@ export default function App() {
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
   const [whatsAppInitialAppointmentId, setWhatsAppInitialAppointmentId] = useState<string | null>(null);
 
-  // Save changes to localStorage
-  useEffect(() => {
-    saveDoctorProfile(doctor);
-  }, [doctor]);
-
-  useEffect(() => {
-    savePatients(patients);
-  }, [patients]);
-
-  useEffect(() => {
-    saveAppointments(appointments);
-  }, [appointments]);
-
-  useEffect(() => {
-    savePrescriptions(prescriptions);
-  }, [prescriptions]);
-
-  useEffect(() => {
-    saveConsultations(consultations);
-  }, [consultations]);
-
-  // Recharge les données depuis LocalStorage quand un autre onglet les modifie
-  useStorageSync((key) => {
-    switch (key) {
-      case 'DOCTOR':
-        setDoctor(loadDoctorProfile());
-        break;
-      case 'PATIENTS':
-        setPatients(loadPatients());
-        break;
-      case 'APPOINTMENTS':
-        setAppointments(loadAppointments());
-        break;
-      case 'PRESCRIPTIONS':
-        setPrescriptions(loadPrescriptions());
-        break;
-      case 'CONSULTATIONS':
-        setConsultations(loadConsultations());
-        break;
-    }
-  });
-
   const today = getTodayDateString();
   const todayAppointments = appointments.filter((a) => a.date === today);
   const waitingPatientsCount = appointments.filter(
@@ -138,22 +145,31 @@ export default function App() {
     setIsWhatsAppModalOpen(true);
   };
 
-  const handleUpdateAppointmentReminder = (
+  const handleUpdateAppointmentReminder = async (
     appointmentId: string,
     sent: boolean,
     timestamp?: string
   ) => {
+    const previous = appointments;
+    const sentAt = sent ? timestamp || new Date().toISOString() : undefined;
     setAppointments((prev) =>
       prev.map((a) =>
         a.id === appointmentId
-          ? {
-              ...a,
-              whatsappReminderSent: sent,
-              whatsappReminderSentAt: sent ? timestamp || new Date().toISOString() : undefined,
-            }
+          ? { ...a, whatsappReminderSent: sent, whatsappReminderSentAt: sentAt }
           : a
       )
     );
+    try {
+      const updated = await updateAppointment(appointmentId, {
+        whatsappReminderSent: sent,
+        whatsappReminderSentAt: sentAt,
+      });
+      setAppointments((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+    } catch (err) {
+      console.error('Failed to update reminder status:', err);
+      setAppointments(previous);
+      showError("Erreur lors de la mise à jour du rappel WhatsApp.");
+    }
   };
 
   // Appointment Handlers
@@ -170,10 +186,12 @@ export default function App() {
     setIsAppointmentModalOpen(true);
   };
 
-  const handleSaveAppointment = (
+  const handleSaveAppointment = async (
     aptData: Partial<Appointment>,
     newPatientData?: Partial<Patient>
   ) => {
+    if (!doctor) return;
+
     const conflict = findOverlappingAppointment(
       appointments,
       aptData.date || today,
@@ -192,98 +210,113 @@ export default function App() {
       if (!proceed) return;
     }
 
-    let finalPatientId = aptData.patientId;
+    try {
+      let finalPatientId = aptData.patientId;
 
-    // If a new patient was created on the fly
-    if (newPatientData) {
-      const createdPatient: Patient = {
-        id: `pat-${Date.now()}`,
-        firstName: newPatientData.firstName || '',
-        lastName: newPatientData.lastName || '',
-        gender: newPatientData.gender || 'Autre',
-        birthDate: newPatientData.birthDate || '1990-01-01',
-        ssn: newPatientData.ssn || 'À renseigner',
-        phone: newPatientData.phone || '',
-        email: newPatientData.email || '',
-        address: newPatientData.address || '',
-        allergies: [],
-        medicalHistory: [],
-        chronicTreatments: [],
-        createdAt: today,
-      };
-      setPatients((prev) => [createdPatient, ...prev]);
-      finalPatientId = createdPatient.id;
-    }
+      // If a new patient was created on the fly
+      if (newPatientData) {
+        const createdPatient = await createPatient(practitionerId, {
+          firstName: newPatientData.firstName || '',
+          lastName: newPatientData.lastName || '',
+          gender: newPatientData.gender || 'Autre',
+          birthDate: newPatientData.birthDate || '1990-01-01',
+          ssn: newPatientData.ssn || 'À renseigner',
+          phone: newPatientData.phone || '',
+          email: newPatientData.email || '',
+          address: newPatientData.address || '',
+          allergies: [],
+          medicalHistory: [],
+          chronicTreatments: [],
+        });
+        setPatients((prev) => [createdPatient, ...prev]);
+        finalPatientId = createdPatient.id;
+      }
 
-    if (aptData.id) {
-      // Update existing appointment
-      setAppointments((prev) =>
-        prev.map((a) =>
-          a.id === aptData.id
-            ? ({
-                ...a,
-                ...aptData,
-                patientId: finalPatientId || a.patientId,
-              } as Appointment)
-            : a
-        )
-      );
-    } else {
-      // Create new appointment
-      const newApt: Appointment = {
-        id: `apt-${Date.now()}`,
-        patientId: finalPatientId || '',
-        date: aptData.date || today,
-        startTime: aptData.startTime || '09:00',
-        duration: aptData.duration || 30,
-        type: aptData.type || 'consultation',
-        status: aptData.status || 'confirmed',
-        reason: aptData.reason || 'Consultation générale',
-        notes: aptData.notes,
-        fee: aptData.fee ?? doctor.consultationFee,
-        isPaid: aptData.isPaid || false,
-        paymentMethod: aptData.paymentMethod,
-        arrivedAt: aptData.arrivedAt,
-      };
-      setAppointments((prev) => [...prev, newApt]);
+      if (aptData.id) {
+        const updated = await updateAppointment(aptData.id, {
+          ...aptData,
+          patientId: finalPatientId || undefined,
+        });
+        setAppointments((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+      } else {
+        const created = await createAppointment(practitionerId, {
+          ...aptData,
+          patientId: finalPatientId || '',
+          date: aptData.date || today,
+          startTime: aptData.startTime || '09:00',
+          duration: aptData.duration || 30,
+          type: aptData.type || 'consultation',
+          status: aptData.status || 'confirmed',
+          reason: aptData.reason || 'Consultation générale',
+          fee: aptData.fee ?? doctor.consultationFee,
+          isPaid: aptData.isPaid || false,
+        });
+        setAppointments((prev) => [...prev, created]);
+      }
+    } catch (err) {
+      console.error('Failed to save appointment:', err);
+      setAppointments(await loadAppointments(practitionerId));
+      showError("Erreur lors de l'enregistrement du rendez-vous.");
     }
   };
 
-  const handleDeleteAppointment = (id: string) => {
+  const handleDeleteAppointment = async (id: string) => {
+    const previous = appointments;
     setAppointments((prev) => prev.filter((a) => a.id !== id));
+    try {
+      await deleteAppointment(id);
+    } catch (err) {
+      console.error('Failed to delete appointment:', err);
+      setAppointments(previous);
+      showError('Erreur lors de la suppression du rendez-vous.');
+    }
   };
 
-  const handleTogglePayment = (
+  const handleTogglePayment = async (
     aptId: string,
     isPaid: boolean,
     paymentMethod?: PaymentMethod
   ) => {
+    const previous = appointments;
+    const current = appointments.find((a) => a.id === aptId);
+    if (!current) return;
+    const nextPaymentMethod = isPaid ? paymentMethod || current.paymentMethod || 'especes' : undefined;
+
     setAppointments((prev) =>
-      prev.map((a) => {
-        if (a.id !== aptId) return a;
-        return {
-          ...a,
-          isPaid,
-          paymentMethod: isPaid ? (paymentMethod || a.paymentMethod || 'especes') : undefined,
-        };
-      })
+      prev.map((a) => (a.id === aptId ? { ...a, isPaid, paymentMethod: nextPaymentMethod } : a))
     );
+    try {
+      const updated = await updateAppointment(aptId, { isPaid, paymentMethod: nextPaymentMethod });
+      setAppointments((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+    } catch (err) {
+      console.error('Failed to update payment:', err);
+      setAppointments(previous);
+      showError('Erreur lors de la mise à jour du paiement.');
+    }
   };
 
-  const handleUpdateStatus = (id: string, newStatus: AppointmentStatus) => {
+  const handleUpdateStatus = async (id: string, newStatus: AppointmentStatus) => {
+    const previous = appointments;
+    const current = appointments.find((a) => a.id === id);
+    if (!current) return;
+
+    let arrivedAt = current.arrivedAt;
+    if (newStatus === 'waiting' && !arrivedAt) {
+      const now = new Date();
+      arrivedAt = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    }
+
     setAppointments((prev) =>
-      prev.map((a) => {
-        if (a.id !== id) return a;
-        const updated = { ...a, status: newStatus };
-        if (newStatus === 'waiting' && !updated.arrivedAt) {
-          const now = new Date();
-          updated.arrivedAt = `${String(now.getHours()).padStart(2, '0')}:${String(
-            now.getMinutes()
-          ).padStart(2, '0')}`;
-        }
-        return updated;
-      })
+      prev.map((a) => (a.id === id ? { ...a, status: newStatus, arrivedAt } : a))
     );
+    try {
+      const updated = await updateAppointment(id, { status: newStatus, arrivedAt });
+      setAppointments((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+    } catch (err) {
+      console.error('Failed to update status:', err);
+      setAppointments(previous);
+      showError('Erreur lors du changement de statut.');
+    }
   };
 
   // Consultation Handlers
@@ -292,32 +325,30 @@ export default function App() {
     setIsConsultationModalOpen(true);
   };
 
-  const handleSaveConsultation = (
+  const handleSaveConsultation = async (
     consultation: Consultation,
     updatedAppointment: Partial<Appointment>
   ) => {
-    // Add or update consultation
-    setConsultations((prev) => {
-      const idx = prev.findIndex((c) => c.id === consultation.id);
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = consultation;
-        return copy;
-      }
-      return [consultation, ...prev];
-    });
+    try {
+      const savedConsultation = await upsertConsultation(practitionerId, consultation);
+      setConsultations((prev) => {
+        const idx = prev.findIndex((c) => c.appointmentId === savedConsultation.appointmentId);
+        if (idx >= 0) {
+          const copy = [...prev];
+          copy[idx] = savedConsultation;
+          return copy;
+        }
+        return [savedConsultation, ...prev];
+      });
 
-    // Update appointment status and billing
-    setAppointments((prev) =>
-      prev.map((a) =>
-        a.id === consultation.appointmentId
-          ? {
-              ...a,
-              ...updatedAppointment,
-            }
-          : a
-      )
-    );
+      const updatedApt = await updateAppointment(consultation.appointmentId, updatedAppointment);
+      setAppointments((prev) => prev.map((a) => (a.id === updatedApt.id ? updatedApt : a)));
+    } catch (err) {
+      console.error('Failed to save consultation:', err);
+      setConsultations(await loadConsultations(practitionerId));
+      setAppointments(await loadAppointments(practitionerId));
+      showError("Erreur lors de l'enregistrement de la consultation.");
+    }
   };
 
   // Prescription Handlers
@@ -327,8 +358,14 @@ export default function App() {
     setIsPrescriptionModalOpen(true);
   };
 
-  const handleSavePrescription = (prescription: Prescription) => {
-    setPrescriptions((prev) => [prescription, ...prev]);
+  const handleSavePrescription = async (prescription: Prescription) => {
+    try {
+      const created = await createPrescription(practitionerId, prescription);
+      setPrescriptions((prev) => [created, ...prev]);
+    } catch (err) {
+      console.error('Failed to save prescription:', err);
+      showError("Erreur lors de l'enregistrement de l'ordonnance.");
+    }
   };
 
   const handlePreviewPrescription = (prescription: Prescription, patient: Patient) => {
@@ -348,17 +385,22 @@ export default function App() {
     setIsPatientFormModalOpen(true);
   };
 
-  const handleSavePatient = (patient: Patient) => {
-    setPatients((prev) => {
-      const idx = prev.findIndex((p) => p.id === patient.id);
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = patient;
-        return copy;
+  const handleSavePatient = async (patient: Patient) => {
+    try {
+      if (patient.id) {
+        const updated = await updatePatient(patient.id, patient);
+        setPatients((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+        setSelectedPatientForDossier(updated);
+      } else {
+        const created = await createPatient(practitionerId, patient);
+        setPatients((prev) => [created, ...prev]);
+        setSelectedPatientForDossier(created);
       }
-      return [patient, ...prev];
-    });
-    setSelectedPatientForDossier(patient);
+    } catch (err) {
+      console.error('Failed to save patient:', err);
+      setPatients(await loadPatients(practitionerId));
+      showError("Erreur lors de l'enregistrement du patient.");
+    }
   };
 
   const handleScheduleForPatient = (patient: Patient) => {
@@ -369,45 +411,95 @@ export default function App() {
     setIsAppointmentModalOpen(true);
   };
 
-  // Storage Handlers
-  const handleExportData = () => {
-    const dataStr = exportCabinetData();
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `sauvegarde_cabinet_${today}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
+  // Doctor profile handler (SettingsModal + WhatsAppReminderModal template editor)
+  const handleSaveDoctor = async (profile: DoctorProfile) => {
+    const previous = doctor;
+    setDoctor(profile);
+    try {
+      const updated = await updateDoctorProfile(practitionerId, profile);
+      setDoctor(updated);
+    } catch (err) {
+      console.error('Failed to save doctor profile:', err);
+      setDoctor(previous);
+      showError('Erreur lors de la mise à jour du profil.');
+    }
   };
 
-  const handleImportData = (jsonString: string): ImportResult => {
-    const result = importCabinetData(jsonString);
+  // Storage Handlers
+  const handleExportData = async () => {
+    try {
+      const dataStr = await exportCabinetData(practitionerId);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `sauvegarde_cabinet_${today}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to export data:', err);
+      showError("Erreur lors de l'export des données.");
+    }
+  };
+
+  const handleImportData = async (jsonString: string): Promise<ImportResult> => {
+    const result = await importCabinetData(practitionerId, jsonString);
     if (result.success) {
-      setDoctor(loadDoctorProfile());
-      setPatients(loadPatients());
-      setAppointments(loadAppointments());
-      setPrescriptions(loadPrescriptions());
-      setConsultations(loadConsultations());
+      const [doctorData, patientsData, appointmentsData, prescriptionsData, consultationsData] =
+        await Promise.all([
+          loadDoctorProfile(practitionerId),
+          loadPatients(practitionerId),
+          loadAppointments(practitionerId),
+          loadPrescriptions(practitionerId),
+          loadConsultations(practitionerId),
+        ]);
+      setDoctor(doctorData);
+      setPatients(patientsData);
+      setAppointments(appointmentsData);
+      setPrescriptions(prescriptionsData);
+      setConsultations(consultationsData);
     }
     return result;
   };
 
-  const handleResetDemo = () => {
-    const data = resetToDemoData();
-    setDoctor(data.doctor);
-    setPatients(data.patients);
-    setAppointments(data.appointments);
-    setPrescriptions(data.prescriptions);
-    setConsultations(data.consultations);
+  const handleResetDemo = async () => {
+    try {
+      const data = await resetToDemoData(practitionerId);
+      setDoctor(data.doctor);
+      setPatients(data.patients);
+      setAppointments(data.appointments);
+      setPrescriptions(data.prescriptions);
+      setConsultations(data.consultations);
+    } catch (err) {
+      console.error('Failed to reset demo data:', err);
+      showError('Erreur lors de la réinitialisation des données de démonstration.');
+    }
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
   };
 
   const patientMap = useMemo(() => new Map(patients.map((p) => [p.id, p])), [patients]);
+
+  if (isLoading || !doctor) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900 print:bg-white print:min-h-0">
       {/* Top Header & Navigation - Hidden when printing documents */}
       <div className="no-print">
+        {errorMessage && (
+          <div className="bg-rose-600 text-white text-xs font-semibold text-center py-2 px-4">
+            {errorMessage}
+          </div>
+        )}
+
         <Header
           doctor={doctor}
           todayAppointmentsCount={todayAppointments.length}
@@ -558,10 +650,11 @@ export default function App() {
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
         doctor={doctor}
-        onSaveDoctor={setDoctor}
+        onSaveDoctor={handleSaveDoctor}
         onExportData={handleExportData}
         onImportData={handleImportData}
         onResetDemo={handleResetDemo}
+        onSignOut={handleSignOut}
       />
 
       {/* WhatsApp Approaching Reminders Hub */}
@@ -575,7 +668,7 @@ export default function App() {
         patients={patients}
         doctor={doctor}
         onUpdateAppointmentReminder={handleUpdateAppointmentReminder}
-        onSaveDoctorProfile={setDoctor}
+        onSaveDoctorProfile={handleSaveDoctor}
         initialSelectedAppointmentId={whatsAppInitialAppointmentId}
       />
     </div>
