@@ -567,7 +567,7 @@ export const PatientDossierPdfModal: React.FC<PatientDossierPdfModalProps> = ({
               {/* Bottom Stamp & Signature */}
               <div className="pt-4 border-t border-slate-300 flex justify-between items-end text-xs print-avoid-break">
                 <div className="text-[10px] text-slate-400">
-                  <p>Document généré par Cabinet Santé</p>
+                  <p>Document généré par MédicLab</p>
                   <p>Reproduction réservée à l'usage médical</p>
                 </div>
 

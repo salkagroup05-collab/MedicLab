@@ -83,7 +83,7 @@ export const AuthScreen: React.FC = () => {
           <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-200 mb-3">
             <Stethoscope className="w-6 h-6" />
           </div>
-          <h1 className="text-xl font-bold text-slate-900">Cabinet Santé</h1>
+          <h1 className="text-xl font-bold text-slate-900">MédicLab</h1>
           <p className="text-xs text-slate-500 mt-1">Agenda & gestion médicale pour praticiens indépendants</p>
         </div>
 

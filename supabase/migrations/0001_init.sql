@@ -1,4 +1,4 @@
--- Cabinet Santé — schéma initial multi-cabinets (Supabase Auth + Postgres + RLS)
+-- MédicLab — schéma initial multi-cabinets (Supabase Auth + Postgres + RLS)
 -- Chaque praticien qui s'inscrit obtient un espace isolé : toutes les tables métier
 -- sont scopées par practitioner_id et protégées par des policies RLS strictes.
 

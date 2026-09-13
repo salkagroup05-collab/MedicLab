@@ -36,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-slate-900 text-base sm:text-lg leading-none tracking-tight whitespace-nowrap">
-                  Cabinet Santé
+                  MédicLab
                 </span>
                 <span className="hidden lg:inline-flex items-center px-2 py-0.5 text-[11px] font-medium text-blue-700 bg-blue-50 rounded-md border border-blue-100 shrink-0">
                   {doctor.specialty}
