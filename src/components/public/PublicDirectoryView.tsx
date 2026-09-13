@@ -5,13 +5,13 @@ import {
   MapPin,
   Phone,
   Search,
-  Stethoscope,
   UserCheck,
   UserX,
 } from 'lucide-react';
 import { PublicPractitioner } from '../../types';
 import { loadPublicPractitioners } from '../../lib/db';
 import { MEDICAL_SPECIALTIES } from '../../constants';
+import { LogoMark } from '../Logo';
 
 export const PublicDirectoryView: React.FC = () => {
   const [practitioners, setPractitioners] = useState<PublicPractitioner[]>([]);
@@ -67,12 +67,10 @@ export const PublicDirectoryView: React.FC = () => {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-xs shrink-0">
-                <Stethoscope className="w-5 h-5" />
-              </div>
+              <LogoMark size={40} className="rounded-xl shadow-xs" />
               <div>
                 <span className="font-bold text-slate-900 text-base sm:text-lg leading-none tracking-tight">
-                  MédicLab
+                  Médic<span className="text-blue-600">Lab</span>
                 </span>
                 <p className="text-xs text-slate-500 font-medium">Trouver un professionnel de santé</p>
               </div>

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Clock, Plus, Settings, Stethoscope, Users, MessageCircle } from 'lucide-react';
+import { Clock, Plus, Settings, Users, MessageCircle } from 'lucide-react';
 import { DoctorProfile } from '../types';
+import { LogoMark } from './Logo';
 
 interface HeaderProps {
   doctor: DoctorProfile;
@@ -30,13 +31,11 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center justify-between h-16 gap-3 sm:gap-6 min-w-0">
           {/* LEFT: Logo & Doctor Info */}
           <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-xs shrink-0">
-              <Stethoscope className="w-5 h-5" />
-            </div>
+            <LogoMark size={40} className="rounded-xl shadow-xs" />
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-slate-900 text-base sm:text-lg leading-none tracking-tight whitespace-nowrap">
-                  MédicLab
+                  Médic<span className="text-blue-600">Lab</span>
                 </span>
                 <span className="hidden lg:inline-flex items-center px-2 py-0.5 text-[11px] font-medium text-blue-700 bg-blue-50 rounded-md border border-blue-100 shrink-0">
                   {doctor.specialty}

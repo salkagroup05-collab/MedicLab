@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { AlertCircle, CheckCircle2, Loader2, Lock, Mail, Stethoscope, User } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Loader2, Lock, Mail, User } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { LogoMark } from './Logo';
 
 type Mode = 'signIn' | 'signUp' | 'forgotPassword';
 
@@ -80,10 +81,12 @@ export const AuthScreen: React.FC = () => {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-200 mb-3">
-            <Stethoscope className="w-6 h-6" />
+          <div className="rounded-2xl shadow-md shadow-blue-200 mb-3">
+            <LogoMark size={48} />
           </div>
-          <h1 className="text-xl font-bold text-slate-900">MédicLab</h1>
+          <h1 className="text-xl font-bold text-slate-900">
+            Médic<span className="text-blue-600">Lab</span>
+          </h1>
           <p className="text-xs text-slate-500 mt-1">Agenda & gestion médicale pour praticiens indépendants</p>
         </div>
 

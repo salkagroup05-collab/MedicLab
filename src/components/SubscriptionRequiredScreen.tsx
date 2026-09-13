@@ -1,6 +1,7 @@
 import React from 'react';
-import { LogOut, ShieldAlert, Stethoscope } from 'lucide-react';
+import { LogOut, ShieldAlert } from 'lucide-react';
 import { DoctorProfile } from '../types';
+import { LogoMark } from './Logo';
 
 interface SubscriptionRequiredScreenProps {
   doctor: DoctorProfile;
@@ -17,10 +18,12 @@ export const SubscriptionRequiredScreen: React.FC<SubscriptionRequiredScreenProp
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-200 mb-3">
-            <Stethoscope className="w-6 h-6" />
+          <div className="rounded-2xl shadow-md shadow-blue-200 mb-3">
+            <LogoMark size={48} />
           </div>
-          <h1 className="text-xl font-bold text-slate-900">MédicLab</h1>
+          <h1 className="text-xl font-bold text-slate-900">
+            Médic<span className="text-blue-600">Lab</span>
+          </h1>
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-6 text-center">
