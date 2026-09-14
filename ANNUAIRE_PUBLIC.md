@@ -54,7 +54,7 @@ Il n'existe aucune librairie de routing dans l'app. Solution minimale et non-inv
 - Dans `src/main.tsx`, évaluer `window.location.pathname === '/annuaire'` **avant** d'appeler `useSession()` (pour ne pas faire d'aller-retour Supabase Auth inutile sur la page publique, et respecter les rules of hooks). Extraire la logique actuelle de `Root()` dans un composant `AuthenticatedRoot` inchangé, et un nouveau `Root()` qui route entre `PublicDirectoryView` et `AuthenticatedRoot` selon le chemin.
 - Dans `AuthScreen.tsx`, ajouter un lien discret sous la carte de connexion : "Vous êtes un patient ? Trouver un professionnel de santé →" (`<a href="/annuaire">`, rechargement complet volontaire puisqu'il n'y a pas de router côté client).
 - Dans la nouvelle page publique, un lien retour "Espace praticien" vers `/`.
-- **Point de vigilance déploiement** (à signaler, pas à résoudre ici) : aucun `netlify.toml`/`vercel.json`/`_redirects` n'existe dans le repo. Un accès direct ou un rafraîchissement sur `/annuaire` en production nécessitera une règle de fallback SPA (`/* → /index.html`) côté hébergeur — à vérifier avec la personne qui gère le déploiement.
+- **Point de vigilance déploiement (résolu)** : le repo n'avait aucun `netlify.toml`/`vercel.json`/`_redirects`, donc un accès direct ou un rafraîchissement sur `/annuaire` en production renvoyait une 404 Vercel brute au lieu de l'app (vérifié sur `medic-lab-ivory.vercel.app/annuaire`). Un `vercel.json` à la racine avec une règle de rewrite (`/(.*) → /index.html`) a été ajouté pour que toutes les routes passent par `index.html` et laissent `Root()` (`src/main.tsx`) faire le routage côté client.
 
 ## 6. Nouvelle vue — `src/components/public/PublicDirectoryView.tsx`
 
