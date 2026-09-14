@@ -2,6 +2,7 @@ import React from 'react';
 import { Clock, Plus, Settings, Users, MessageCircle } from 'lucide-react';
 import { DoctorProfile } from '../types';
 import { LogoMark } from './Logo';
+import { getProfessionalOrderLabel } from '../constants';
 
 interface HeaderProps {
   doctor: DoctorProfile;
@@ -43,11 +44,11 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
               <p
                 className="text-xs text-slate-500 font-medium truncate mt-1 max-w-[200px] sm:max-w-[340px] md:max-w-[450px]"
-                title={`${doctor.title} ${doctor.name} • ${doctor.city} • ONMS : ${doctor.onms}`}
+                title={`${doctor.title} ${doctor.name} • ${doctor.city} • ${getProfessionalOrderLabel(doctor.specialty).short} : ${doctor.professionalOrderNumber}`}
               >
                 <span>{doctor.title} {doctor.name}</span>
                 <span className="hidden sm:inline"> • {doctor.city}</span>
-                <span className="hidden xl:inline"> • ONMS : {doctor.onms}</span>
+                <span className="hidden xl:inline"> • {getProfessionalOrderLabel(doctor.specialty).short} : {doctor.professionalOrderNumber}</span>
               </p>
             </div>
           </div>

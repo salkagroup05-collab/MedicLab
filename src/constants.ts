@@ -1,4 +1,4 @@
-import { AppointmentStatus, AppointmentType, PaymentMethod } from './types';
+import { AppointmentStatus, AppointmentType, PaymentMethod, ToothStatus } from './types';
 
 // Tarif de consultation par défaut en Francs CFA (XOF), utilisé quand le profil du praticien
 // ne définit pas encore de tarif personnalisé.
@@ -81,6 +81,9 @@ export const APPOINTMENT_TYPE_CONFIG: Record<AppointmentType, AppointmentTypeCon
   teleconsultation: { label: 'Téléconsult.', bg: 'bg-purple-50', text: 'text-purple-800', border: 'border-purple-200' },
   bilan: { label: 'Bilan', bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200' },
   vaccination: { label: 'Vaccination', bg: 'bg-teal-50', text: 'text-teal-800', border: 'border-teal-200' },
+  soins_dentaires: { label: 'Soins dentaires', bg: 'bg-cyan-50', text: 'text-cyan-800', border: 'border-cyan-200' },
+  detartrage: { label: 'Détartrage', bg: 'bg-indigo-50', text: 'text-indigo-800', border: 'border-indigo-200' },
+  extraction_dentaire: { label: 'Extraction dentaire', bg: 'bg-orange-50', text: 'text-orange-800', border: 'border-orange-200' },
 };
 
 // Source unique de vérité pour les libellés des moyens de paiement, utilisée dans les
@@ -130,3 +133,52 @@ export const MEDICAL_SPECIALTIES: string[] = [
   'Kinésithérapie',
   'Sage-femme',
 ];
+
+// Sous-ensemble de MEDICAL_SPECIALTIES qui bénéficie de fonctionnalités dédiées
+// (odontogramme, types de rendez-vous dentaires, ordre professionnel ONCDS).
+// Comme pour SPECIALTY_PRESETS, ne pas fusionner cette liste avec MEDICAL_SPECIALTIES :
+// elle sert un besoin différent (activer une logique métier, pas peupler un sélecteur).
+export const DENTAL_SPECIALTIES: string[] = ['Chirurgie Dentaire'];
+
+export const isDentalSpecialty = (specialty: string): boolean => DENTAL_SPECIALTIES.includes(specialty);
+
+export interface ProfessionalOrderLabel {
+  short: string; // sigle, ex: "ONMS"
+  medium: string; // ex: "Ordre des Médecins"
+  full: string; // dénomination officielle complète
+}
+
+// Le numéro d'inscription à l'ordre professionnel (DoctorProfile.professionalOrderNumber)
+// est un champ neutre : son libellé affiché dépend de la spécialité du praticien, car
+// médecins et dentistes dépendent d'ordres distincts au Sénégal.
+export function getProfessionalOrderLabel(specialty: string): ProfessionalOrderLabel {
+  if (isDentalSpecialty(specialty)) {
+    return {
+      short: 'ONCDS',
+      medium: 'Ordre des Chirurgiens-Dentistes',
+      full: 'Ordre National des Chirurgiens-Dentistes du Sénégal',
+    };
+  }
+  return {
+    short: 'ONMS',
+    medium: 'Ordre des Médecins',
+    full: 'Ordre National des Médecins du Sénégal',
+  };
+}
+
+export interface ToothStatusConfig {
+  label: string;
+  color: string; // classe Tailwind bg-* utilisée pour colorer la dent dans l'odontogramme
+}
+
+// Source unique de vérité pour le libellé et la couleur de chaque statut de dent,
+// utilisée par OdontogramChart (légende + coloration des dents).
+export const TOOTH_STATUS_CONFIG: Record<ToothStatus, ToothStatusConfig> = {
+  sain: { label: 'Saine', color: 'bg-white' },
+  carie: { label: 'Cariée', color: 'bg-rose-400' },
+  obture: { label: 'Obturée', color: 'bg-amber-400' },
+  couronne: { label: 'Couronne', color: 'bg-yellow-400' },
+  implant: { label: 'Implant', color: 'bg-slate-400' },
+  extrait: { label: 'Extraite', color: 'bg-slate-200' },
+  absent: { label: 'Absente', color: 'bg-slate-100' },
+};

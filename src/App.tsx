@@ -590,6 +590,7 @@ export default function App({ session }: AppProps) {
           <PrescriptionsListView
             prescriptions={prescriptions}
             patients={patients}
+            doctor={doctor}
             onNewPrescription={() => {
               if (patients.length > 0) {
                 handleOpenPrescriptionBuilder(patients[0]);

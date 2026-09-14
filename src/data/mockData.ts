@@ -6,7 +6,7 @@ export const initialDoctorProfile: DoctorProfile = {
   name: 'Cheikh Oumar Diop',
   title: 'Dr.',
   specialty: 'Médecine Générale & Santé Familiale',
-  onms: 'SN-04821 / 2012',
+  professionalOrderNumber: 'SN-04821 / 2012',
   ninea: '004892150 2Y3',
   phone: '+221 33 825 40 50',
   email: 'cabinet.drdiop@sante.sn',

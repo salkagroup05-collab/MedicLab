@@ -4,7 +4,7 @@ import { DoctorProfile } from '../types';
 import { DEFAULT_WHATSAPP_TEMPLATE } from '../utils/whatsappUtils';
 import { getTrialDaysRemaining } from '../utils/subscriptionUtils';
 import { ImportResult } from '../lib/db';
-import { MEDICAL_SPECIALTIES } from '../constants';
+import { MEDICAL_SPECIALTIES, getProfessionalOrderLabel } from '../constants';
 import { Modal } from './shared/Modal';
 
 const SUBSCRIPTION_STATUS_LABELS: Record<DoctorProfile['subscriptionStatus'], string> = {
@@ -41,7 +41,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [specialtySelect, setSpecialtySelect] = useState(isKnownSpecialty ? doctor.specialty : 'Autre');
   const [specialtyOther, setSpecialtyOther] = useState(isKnownSpecialty ? '' : doctor.specialty);
   const specialty = specialtySelect === 'Autre' ? specialtyOther : specialtySelect;
-  const [onms, setOnms] = useState(doctor.onms || '');
+  const [professionalOrderNumber, setProfessionalOrderNumber] = useState(doctor.professionalOrderNumber || '');
   const [ninea, setNinea] = useState(doctor.ninea || '');
   const [phone, setPhone] = useState(doctor.phone);
   const [email, setEmail] = useState(doctor.email);
@@ -80,7 +80,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       name: name.trim(),
       title,
       specialty: trimmedSpecialty,
-      onms: onms.trim(),
+      professionalOrderNumber: professionalOrderNumber.trim(),
       ninea: ninea.trim(),
       phone: phone.trim(),
       email: email.trim(),
@@ -208,13 +208,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 )}
               </div>
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">N° Ordre des Médecins (ONMS) *</label>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  N° d'inscription à l'ordre professionnel ({getProfessionalOrderLabel(specialty).short}) *
+                </label>
                 <input
                   type="text"
                   required
                   placeholder="Ex: SN-04821 / 2012"
-                  value={onms}
-                  onChange={(e) => setOnms(e.target.value)}
+                  value={professionalOrderNumber}
+                  onChange={(e) => setProfessionalOrderNumber(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 font-mono"
                 />
               </div>
@@ -416,7 +418,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     spécialité, ville, adresse, téléphone, présentation.
                     <br />
                     <span className="font-semibold text-slate-700">Jamais publiées :</span> email, N° Ordre
-                    (ONMS), N° NINEA, statut d'abonnement.
+                    professionnel, N° NINEA, statut d'abonnement.
                   </div>
                 </div>
               )}

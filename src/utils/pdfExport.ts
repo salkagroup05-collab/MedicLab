@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf';
 import { Appointment, DoctorProfile, Patient, Consultation, Prescription, ReferralLetterData } from '../types';
 import { calculateAge, formatDateFr, formatDateShortFr, formatTimeFr, getTodayDateString } from './dateUtils';
 import { formatFCFA } from './currencyUtils';
+import { APPOINTMENT_TYPE_CONFIG } from '../constants';
 
 export interface PdfExportOptions {
   includeVitals?: boolean;
@@ -122,8 +123,8 @@ export function generatePatientDossierPdf(
   let rightY = margin;
   doc.setFontSize(8);
   doc.setTextColor(100, 115, 130);
-  if (doctor.onms) {
-    doc.text(`N° Ordre : ${doctor.onms}`, rightColX, rightY, { align: 'right' });
+  if (doctor.professionalOrderNumber) {
+    doc.text(`N° Ordre : ${doctor.professionalOrderNumber}`, rightColX, rightY, { align: 'right' });
     rightY += 4;
   }
   if (doctor.ninea) {
@@ -335,20 +336,7 @@ export function generatePatientDossierPdf(
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.2);
       doc.setTextColor(51, 65, 85);
-      const typeLabel =
-        apt.type === 'consultation'
-          ? 'Consultation'
-          : apt.type === 'suivi'
-          ? 'Suivi'
-          : apt.type === 'urgence'
-          ? 'Urgence'
-          : apt.type === 'teleconsultation'
-          ? 'Téléconsult.'
-          : apt.type === 'bilan'
-          ? 'Bilan'
-          : apt.type === 'vaccination'
-          ? 'Vaccination'
-          : apt.type;
+      const typeLabel = APPOINTMENT_TYPE_CONFIG[apt.type]?.label ?? apt.type;
       const motifText = `${typeLabel} - ${apt.reason || 'Général'}`;
       const motifLines = doc.splitTextToSize(motifText, 50);
       const motifDisplay = motifLines.length > 1 ? `${doc.splitTextToSize(motifText, 46)[0]}…` : motifLines[0];
@@ -667,11 +655,11 @@ export function generatePatientDossierPdf(
   doc.setTextColor(30, 58, 138);
   doc.text(`${doctor.title} ${doctor.name}`, stampX, signY + 14);
 
-  if (doctor.onms) {
+  if (doctor.professionalOrderNumber) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(100, 116, 139);
-    doc.text(`N° Ordre : ${doctor.onms}`, stampX, signY + 19);
+    doc.text(`N° Ordre : ${doctor.professionalOrderNumber}`, stampX, signY + 19);
   }
 
   // --- Numérotation de toutes les pages ---
@@ -778,8 +766,8 @@ export function generateReferralLetterPdf(
   let rightY = margin;
   doc.setFontSize(8);
   doc.setTextColor(100, 115, 130);
-  if (doctor.onms) {
-    doc.text(`N° Ordre : ${doctor.onms}`, rightColX, rightY, { align: 'right' });
+  if (doctor.professionalOrderNumber) {
+    doc.text(`N° Ordre : ${doctor.professionalOrderNumber}`, rightColX, rightY, { align: 'right' });
     rightY += 4;
   }
   if (doctor.ninea) {
@@ -1098,8 +1086,8 @@ export function generateReferralLetterPdf(
   doc.setTextColor(71, 85, 105);
   doc.text(doctor.specialty || 'Médecin Généraliste', signX, cursorY);
   cursorY += 3.5;
-  if (doctor.onms) {
-    doc.text(`N° Ordre : ${doctor.onms}`, signX, cursorY);
+  if (doctor.professionalOrderNumber) {
+    doc.text(`N° Ordre : ${doctor.professionalOrderNumber}`, signX, cursorY);
     cursorY += 4;
   } else {
     cursorY += 1;

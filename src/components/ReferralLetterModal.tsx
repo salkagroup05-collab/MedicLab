@@ -307,7 +307,7 @@ export const ReferralLetterModal: React.FC<ReferralLetterModalProps> = ({
     lines.push(`CABINET MÉDICAL DU ${doctor.title.toUpperCase()} ${doctor.name.toUpperCase()}`);
     lines.push(`${doctor.specialty || 'Médecine Générale'}`);
     if (doctor.address) lines.push(`${doctor.address} - ${doctor.city || 'Dakar'}`);
-    lines.push(`Tél : ${doctor.phone} | N° Ordre : ${doctor.onms || 'SN-04821'}`);
+    lines.push(`Tél : ${doctor.phone} | N° Ordre : ${doctor.professionalOrderNumber || 'SN-04821'}`);
     lines.push(`Fait à ${doctor.city || 'Dakar'}, le ${todayFr}`);
     lines.push('--------------------------------------------------');
     lines.push(`DESTINATAIRE : ${recipientTitle}`);
@@ -397,7 +397,7 @@ export const ReferralLetterModal: React.FC<ReferralLetterModalProps> = ({
     lines.push('Confraternellement,');
     lines.push(`${doctor.title} ${doctor.name}`);
     lines.push(`${doctor.specialty || 'Médecin Généraliste'}`);
-    if (doctor.onms) lines.push(`N° Ordre : ${doctor.onms}`);
+    if (doctor.professionalOrderNumber) lines.push(`N° Ordre : ${doctor.professionalOrderNumber}`);
 
     return lines.join('\n');
   };
@@ -861,7 +861,7 @@ export const ReferralLetterModal: React.FC<ReferralLetterModalProps> = ({
                   </div>
                   <div className="text-right text-[11px] text-slate-600 space-y-0.5">
                     <p className="font-semibold text-slate-800">
-                      N° Ordre : {doctor.onms || 'SN-04821'}
+                      N° Ordre : {doctor.professionalOrderNumber || 'SN-04821'}
                     </p>
                     <p>N° NINEA : {doctor.ninea || '004892150'}</p>
                     <p className="font-bold text-slate-800 mt-2">

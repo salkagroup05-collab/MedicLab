@@ -29,7 +29,7 @@ interface PractitionerRow {
   name: string;
   title: string;
   specialty: string;
-  onms: string | null;
+  professional_order_number: string | null;
   ninea: string | null;
   phone: string;
   email: string;
@@ -53,7 +53,7 @@ function rowToDoctorProfile(row: PractitionerRow): DoctorProfile {
     name: row.name,
     title: row.title,
     specialty: row.specialty,
-    onms: row.onms ?? undefined,
+    professionalOrderNumber: row.professional_order_number ?? undefined,
     ninea: row.ninea ?? undefined,
     phone: row.phone,
     email: row.email,
@@ -77,7 +77,7 @@ function doctorProfileToRow(patch: Partial<DoctorProfile>): Record<string, unkno
   if ('name' in patch) row.name = patch.name;
   if ('title' in patch) row.title = patch.title;
   if ('specialty' in patch) row.specialty = patch.specialty;
-  if ('onms' in patch) row.onms = patch.onms ?? null;
+  if ('professionalOrderNumber' in patch) row.professional_order_number = patch.professionalOrderNumber ?? null;
   if ('ninea' in patch) row.ninea = patch.ninea ?? null;
   if ('phone' in patch) row.phone = patch.phone;
   if ('email' in patch) row.email = patch.email;
@@ -388,6 +388,7 @@ interface ConsultationRow {
   temperature: number | null;
   blood_sugar: number | null;
   soap: Consultation['soap'];
+  odontogram: Consultation['odontogram'] | null;
   prescription_id: string | null;
   notes: string | null;
 }
@@ -411,6 +412,7 @@ function rowToConsultation(row: ConsultationRow): Consultation {
     reason: row.reason,
     vitals: Object.keys(vitals!).length > 0 ? vitals : undefined,
     soap: row.soap,
+    odontogram: row.odontogram ?? undefined,
     prescriptionId: row.prescription_id ?? undefined,
     notes: row.notes ?? undefined,
   };
@@ -446,6 +448,7 @@ export async function upsertConsultation(
     temperature: vitals?.temperature ?? null,
     blood_sugar: vitals?.bloodSugar ?? null,
     soap: consultation.soap,
+    odontogram: consultation.odontogram ?? null,
     prescription_id: consultation.prescriptionId ?? null,
     notes: consultation.notes ?? null,
   };
@@ -710,7 +713,7 @@ export async function resetToDemoData(practitionerId: string): Promise<{
       name: initialDoctorProfile.name,
       title: initialDoctorProfile.title,
       specialty: initialDoctorProfile.specialty,
-      onms: initialDoctorProfile.onms ?? null,
+      professional_order_number: initialDoctorProfile.professionalOrderNumber ?? null,
       ninea: initialDoctorProfile.ninea ?? null,
       phone: initialDoctorProfile.phone,
       email: initialDoctorProfile.email,

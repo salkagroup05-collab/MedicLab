@@ -1,10 +1,13 @@
-export type AppointmentType = 
-  | 'consultation' 
-  | 'suivi' 
-  | 'urgence' 
-  | 'teleconsultation' 
-  | 'bilan' 
-  | 'vaccination';
+export type AppointmentType =
+  | 'consultation'
+  | 'suivi'
+  | 'urgence'
+  | 'teleconsultation'
+  | 'bilan'
+  | 'vaccination'
+  | 'soins_dentaires'
+  | 'detartrage'
+  | 'extraction_dentaire';
 
 export type AppointmentStatus = 
   | 'confirmed' 
@@ -31,7 +34,7 @@ export interface DoctorProfile {
   name: string;
   title: string; // Dr.
   specialty: string;
-  onms?: string; // Ordre National des Médecins du Sénégal (ex: SN-04821)
+  professionalOrderNumber?: string; // N° d'inscription à l'ordre professionnel (ONMS, ONCDS...) — libellé dérivé de la spécialité, voir getProfessionalOrderLabel
   ninea?: string; // N° NINEA (Sénégal)
   phone: string;
   email: string;
@@ -136,6 +139,18 @@ export interface Prescription {
   createdAt: string;
 }
 
+export type ToothStatus = 'sain' | 'carie' | 'obture' | 'couronne' | 'implant' | 'extrait' | 'absent';
+
+export interface ToothRecord {
+  status: ToothStatus;
+  note?: string;
+}
+
+// Odontogramme : clé = numéro de dent en notation FDI ('11'..'48'), une dent
+// absente de l'objet = non renseignée. Passthrough JSONB opaque côté DB, même
+// schéma que `soap` / `emergencyContact` — aucune validation serveur.
+export type Odontogram = Record<string, ToothRecord>;
+
 export interface Consultation {
   id: string;
   appointmentId: string;
@@ -144,6 +159,7 @@ export interface Consultation {
   time: string;
   reason: string;
   vitals?: Vitals;
+  odontogram?: Odontogram;
   soap: {
     subjective: string; // Motif et symptômes rapportés par le patient
     objective: string;  // Examen physique et observations cliniques

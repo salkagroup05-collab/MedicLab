@@ -3,7 +3,7 @@ import { X, User, Check, Trash2, MessageCircle } from 'lucide-react';
 import { Appointment, AppointmentStatus, AppointmentType, DoctorProfile, Patient } from '../types';
 import { getTodayDateString } from '../utils/dateUtils';
 import { getWhatsAppLink, openWhatsAppReminder, sanitizePhoneNumber } from '../utils/whatsappUtils';
-import { APPOINTMENT_STATUS_CONFIG, DEFAULT_CONSULTATION_FEE_XOF } from '../constants';
+import { APPOINTMENT_STATUS_CONFIG, DEFAULT_CONSULTATION_FEE_XOF, isDentalSpecialty } from '../constants';
 import { Modal } from './shared/Modal';
 
 interface AppointmentModalProps {
@@ -19,13 +19,16 @@ interface AppointmentModalProps {
   doctor: DoctorProfile;
 }
 
-const APPOINTMENT_TYPES: { value: AppointmentType; label: string; color: string }[] = [
+const APPOINTMENT_TYPES: { value: AppointmentType; label: string; color: string; dentalOnly?: boolean }[] = [
   { value: 'consultation', label: 'Consultation standard', color: 'bg-blue-100 text-blue-800' },
   { value: 'suivi', label: 'Consultation de suivi', color: 'bg-emerald-100 text-emerald-800' },
   { value: 'urgence', label: 'Urgence médicale', color: 'bg-rose-100 text-rose-800' },
   { value: 'teleconsultation', label: 'Téléconsultation', color: 'bg-purple-100 text-purple-800' },
   { value: 'bilan', label: 'Bilan complet / Prévention', color: 'bg-amber-100 text-amber-800' },
   { value: 'vaccination', label: 'Vaccination / Injection', color: 'bg-teal-100 text-teal-800' },
+  { value: 'soins_dentaires', label: 'Soins dentaires', color: 'bg-cyan-100 text-cyan-800', dentalOnly: true },
+  { value: 'detartrage', label: 'Détartrage', color: 'bg-indigo-100 text-indigo-800', dentalOnly: true },
+  { value: 'extraction_dentaire', label: 'Extraction dentaire', color: 'bg-orange-100 text-orange-800', dentalOnly: true },
 ];
 
 const STATUS_OPTIONS: { value: AppointmentStatus; label: string }[] = (
@@ -379,7 +382,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
                 onChange={(e) => setType(e.target.value as AppointmentType)}
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
               >
-                {APPOINTMENT_TYPES.map((t) => (
+                {APPOINTMENT_TYPES.filter((t) => !t.dentalOnly || isDentalSpecialty(doctor.specialty)).map((t) => (
                   <option key={t.value} value={t.value}>
                     {t.label}
                   </option>

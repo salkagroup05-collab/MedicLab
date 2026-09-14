@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Printer, Search, Plus, Pill } from 'lucide-react';
-import { Patient, Prescription } from '../types';
+import { DoctorProfile, Patient, Prescription } from '../types';
 import { formatDateShortFr } from '../utils/dateUtils';
+import { getProfessionalOrderLabel } from '../constants';
 
 interface PrescriptionsListViewProps {
   prescriptions: Prescription[];
   patients: Patient[];
+  doctor: DoctorProfile;
   onNewPrescription: () => void;
   onPreviewPrescription: (prescription: Prescription, patient: Patient) => void;
 }
@@ -13,6 +15,7 @@ interface PrescriptionsListViewProps {
 export const PrescriptionsListView: React.FC<PrescriptionsListViewProps> = ({
   prescriptions,
   patients,
+  doctor,
   onNewPrescription,
   onPreviewPrescription,
 }) => {
@@ -105,7 +108,7 @@ export const PrescriptionsListView: React.FC<PrescriptionsListViewProps> = ({
                 </div>
 
                 <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-[10px] text-slate-400">Authentifiée ONMS</span>
+                  <span className="text-[10px] text-slate-400">Authentifiée {getProfessionalOrderLabel(doctor.specialty).short}</span>
                   {patient && (
                     <button
                       type="button"

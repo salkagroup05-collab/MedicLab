@@ -275,7 +275,7 @@ export const AuthScreen: React.FC = () => {
             <div>
               <div className="text-sm font-bold text-white">Renseignez votre profil</div>
               <div className="text-[13px] text-[#c7d7f5] mt-0.5">
-                Spécialité, N° ONMS, tarif de consultation.
+                Spécialité, numéro d'ordre professionnel, tarif de consultation.
               </div>
             </div>
           </div>

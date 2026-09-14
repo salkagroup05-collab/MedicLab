@@ -11,6 +11,7 @@ import {
 import { DoctorProfile, Medication, Patient, Prescription } from '../types';
 import { calculateAge, formatDateFr, getTodayDateString } from '../utils/dateUtils';
 import { Modal } from './shared/Modal';
+import { getProfessionalOrderLabel } from '../constants';
 
 interface PrescriptionModalProps {
   isOpen: boolean;
@@ -287,7 +288,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
                     <p className="text-[11px] text-slate-600">Tél : {doctor.phone}</p>
                   </div>
                   <div className="text-right text-[11px] text-slate-600 space-y-0.5">
-                    <p className="font-semibold text-slate-800">Ordre : {doctor.onms || 'SN-04821'}</p>
+                    <p className="font-semibold text-slate-800">Ordre : {doctor.professionalOrderNumber || 'SN-04821'}</p>
                     <p>N° NINEA : {doctor.ninea || '004892150'}</p>
                     <div className="inline-block mt-2 px-2 py-0.5 rounded-sm bg-slate-100 border border-slate-300 text-[10px] font-mono text-slate-700">
                       PRESCRIPTION MÉDICALE
@@ -355,7 +356,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
                   </div>
                   <div className="text-[9px] text-slate-500 leading-tight">
                     <p className="font-bold text-slate-700">Ordonnance médicale</p>
-                    <p>Ordre des Médecins (ONMS)</p>
+                    <p>{getProfessionalOrderLabel(doctor.specialty).medium} ({getProfessionalOrderLabel(doctor.specialty).short})</p>
                     <p>République du Sénégal</p>
                   </div>
                 </div>
@@ -365,7 +366,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
                   <div className="mt-2 font-serif italic text-sm text-blue-900 pr-2">
                     {doctor.title} {doctor.name}
                   </div>
-                  <p className="text-[9px] text-slate-400 mt-1">N° ONMS : {doctor.onms || 'SN-04821'}</p>
+                  <p className="text-[9px] text-slate-400 mt-1">N° {getProfessionalOrderLabel(doctor.specialty).short} : {doctor.professionalOrderNumber || 'SN-04821'}</p>
                 </div>
               </div>
             </div>

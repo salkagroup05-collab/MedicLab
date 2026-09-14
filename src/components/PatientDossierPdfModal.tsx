@@ -291,7 +291,7 @@ export const PatientDossierPdfModal: React.FC<PatientDossierPdfModalProps> = ({
                   </div>
                   <div className="text-right text-[11px] text-slate-600 space-y-0.5">
                     <p className="font-semibold text-slate-800">
-                      N° Ordre : {doctor.onms || 'SN-04821'}
+                      N° Ordre : {doctor.professionalOrderNumber || 'SN-04821'}
                     </p>
                     <p>N° NINEA : {doctor.ninea || '004892150'}</p>
                     <p className="font-medium text-slate-700 mt-2">Édité le {todayFr}</p>
@@ -577,7 +577,7 @@ export const PatientDossierPdfModal: React.FC<PatientDossierPdfModalProps> = ({
                     {doctor.title} {doctor.name}
                   </div>
                   <p className="text-[9px] text-slate-400 mt-0.5">
-                    N° Ordre : {doctor.onms || 'SN-04821'}
+                    N° Ordre : {doctor.professionalOrderNumber || 'SN-04821'}
                   </p>
                 </div>
               </div>

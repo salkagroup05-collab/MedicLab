@@ -8,11 +8,13 @@ import {
   Activity,
   CreditCard,
   Pill,
+  Smile,
 } from 'lucide-react';
-import { Appointment, Consultation, DoctorProfile, Patient, PaymentMethod, Prescription, Vitals } from '../types';
+import { Appointment, Consultation, DoctorProfile, Odontogram, Patient, PaymentMethod, Prescription, Vitals } from '../types';
 import { calculateAge, calculateBmi, formatDateFr } from '../utils/dateUtils';
-import { DEFAULT_CONSULTATION_FEE_XOF, PAYMENT_METHODS } from '../constants';
+import { DEFAULT_CONSULTATION_FEE_XOF, PAYMENT_METHODS, isDentalSpecialty } from '../constants';
 import { Modal } from './shared/Modal';
+import { OdontogramChart } from './OdontogramChart';
 
 interface ConsultationModalProps {
   isOpen: boolean;
@@ -54,10 +56,15 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
   const [assessment, setAssessment] = useState('');
   const [plan, setPlan] = useState('');
 
+  // Odontogramme (uniquement pour les spécialités dentaires)
+  const [odontogram, setOdontogram] = useState<Odontogram>({});
+
   // Payment
   const [isPaid, setIsPaid] = useState<boolean>(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('carte');
   const [fee, setFee] = useState<number>(DEFAULT_CONSULTATION_FEE_XOF);
+
+  const isDentist = isDentalSpecialty(doctor.specialty);
 
   useEffect(() => {
     if (existingConsultation) {
@@ -74,9 +81,14 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
       setObjective(existingConsultation.soap.objective || '');
       setAssessment(existingConsultation.soap.assessment || '');
       setPlan(existingConsultation.soap.plan || '');
+      setOdontogram(existingConsultation.odontogram || {});
     } else if (appointment) {
       setSubjective(`Motif: ${appointment.reason}. `);
-      setObjective('Examen général : état général conservé. Auscultation cardio-pulmonaire normale.');
+      setObjective(
+        isDentalSpecialty(doctor.specialty)
+          ? ''
+          : 'Examen général : état général conservé. Auscultation cardio-pulmonaire normale.'
+      );
       setAssessment('');
       setPlan('');
       setSystolicBp('');
@@ -86,6 +98,7 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
       setHeight('');
       setTemperature('');
       setBloodSugar('');
+      setOdontogram({});
     }
 
     if (appointment) {
@@ -128,6 +141,7 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
       time: appointment.startTime,
       reason: appointment.reason,
       vitals: vitalsPayload,
+      odontogram: isDentist ? odontogram : undefined,
       soap: {
         subjective,
         objective,
@@ -397,6 +411,17 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Section 2bis: Odontogramme (spécialités dentaires uniquement) */}
+          {isDentist && (
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2">
+                <Smile className="w-4 h-4 text-blue-600" />
+                <span>Schéma dentaire (odontogramme)</span>
+              </div>
+              <OdontogramChart value={odontogram} onChange={setOdontogram} />
+            </div>
+          )}
 
           {/* Section 3: Facturation & Honoraires */}
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
