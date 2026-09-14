@@ -35,8 +35,8 @@ export const SubscriptionRequiredScreen: React.FC<SubscriptionRequiredScreenProp
             {isExpiredTrial ? "Votre période d'essai est terminée" : 'Abonnement inactif'}
           </h2>
           <p className="text-xs text-slate-500 leading-relaxed mb-6">
-            L'accès à votre cabinet est actuellement suspendu. Contactez notre équipe pour réactiver
-            votre abonnement et retrouver l'accès à vos patients, rendez-vous et dossiers médicaux.
+            Nous avons suspendu l'accès à votre cabinet. Contactez notre équipe pour réactiver votre
+            abonnement et retrouver vos patients, rendez-vous et dossiers médicaux.
           </p>
 
           <button

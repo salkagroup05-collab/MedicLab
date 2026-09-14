@@ -142,7 +142,7 @@ export const PublicDirectoryView: React.FC = () => {
 
         {!loading && !error && practitioners.length === 0 && (
           <div className="p-12 text-center text-sm text-slate-500 border border-dashed border-slate-300 rounded-xl bg-white">
-            Aucun professionnel n'est actuellement inscrit dans l'annuaire public.
+            Aucun professionnel n'est inscrit dans l'annuaire public.
           </div>
         )}
 

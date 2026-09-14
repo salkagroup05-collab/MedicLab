@@ -80,7 +80,7 @@ export const AuthScreen: React.FC = () => {
       return;
     }
     setInfoMessage(
-      'Compte créé avec succès. Vérifiez votre boîte email pour confirmer votre compte avant de vous connecter.'
+      'Compte créé. Vérifiez votre boîte email pour confirmer votre compte avant de vous connecter.'
     );
     setMode('signIn');
   };
@@ -97,7 +97,7 @@ export const AuthScreen: React.FC = () => {
       setError(resetError.message);
       return;
     }
-    setInfoMessage('Si un compte existe avec cet email, un lien de réinitialisation vient de lui être envoyé.');
+    setInfoMessage('Si un compte existe avec cet email, nous venons de lui envoyer un lien de réinitialisation.');
   };
 
   if (mode === 'signIn') {
@@ -115,7 +115,7 @@ export const AuthScreen: React.FC = () => {
               Votre cabinet vous attend.
             </h2>
             <p className="mt-4 text-[15px] leading-relaxed text-[#dbe7fb] max-w-[400px]">
-              Agenda, salle d'attente, dossiers patients, ordonnances et règlements en FCFA — dans un
+              Agenda, salle d'attente, dossiers patients, ordonnances et règlements en FCFA, dans un
               espace qui n'appartient qu'à vous.
             </p>
             <div className="flex flex-col gap-3 mt-8">
@@ -279,7 +279,7 @@ export const AuthScreen: React.FC = () => {
                 </span>
                 <div>
                   <div className="text-sm font-bold text-white">Confirmez par email</div>
-                  <div className="text-[13px] text-[#c7d7f5] mt-0.5">Un lien vous est envoyé immédiatement.</div>
+                  <div className="text-[13px] text-[#c7d7f5] mt-0.5">Vous recevez le lien tout de suite.</div>
                 </div>
               </div>
               <div className="flex gap-3.5">
@@ -451,8 +451,8 @@ export const AuthScreen: React.FC = () => {
             Reprenez la main sur votre compte.
           </h2>
           <p className="mt-4 text-[15px] leading-relaxed text-[#dbe7fb] max-w-[400px]">
-            Un lien de réinitialisation est envoyé à l'adresse associée à votre cabinet. Vos données restent
-            intactes.
+            Nous envoyons un lien de réinitialisation à l'adresse associée à votre cabinet. Vos données
+            restent intactes.
           </p>
         </div>
         <p className="text-xs text-[#a9c3ee]">Besoin d'aide ? contact@mediclab.sn</p>

@@ -645,7 +645,7 @@ export async function importCabinetData(practitionerId: string, jsonString: stri
     );
     if (validAppointments.length < raw.appointments.length) {
       errors.push(
-        `${raw.appointments.length - validAppointments.length} rendez-vous invalide(s) ou lié(s) à un patient inconnu ont été ignoré(s).`
+        `${raw.appointments.length - validAppointments.length} rendez-vous invalide(s) ou lié(s) à un patient inconnu ignoré(s).`
       );
     }
 

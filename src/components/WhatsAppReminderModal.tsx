@@ -617,7 +617,7 @@ export const WhatsAppReminderModal: React.FC<WhatsAppReminderModalProps> = ({
                   <span className="text-xs text-slate-500">
                     {templateSavedToast && (
                       <span className="text-emerald-700 font-bold flex items-center gap-1">
-                        <Check className="w-4 h-4" /> Modèle enregistré avec succès !
+                        <Check className="w-4 h-4" /> Modèle enregistré !
                       </span>
                     )}
                   </span>

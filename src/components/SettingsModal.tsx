@@ -428,7 +428,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-sm flex items-center gap-1.5 cursor-pointer transition-colors"
               >
                 {savedSuccess ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-                <span>{savedSuccess ? 'Enregistré avec succès !' : 'Enregistrer le profil'}</span>
+                <span>{savedSuccess ? 'Enregistré !' : 'Enregistrer le profil'}</span>
               </button>
             </div>
           </form>
@@ -510,7 +510,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     )
                   ) {
                     await onResetDemo();
-                    alert('Données de démonstration réinitialisées avec succès.');
+                    alert('Données de démonstration réinitialisées.');
                     onClose();
                   }
                 }}

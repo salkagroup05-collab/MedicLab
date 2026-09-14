@@ -1,9 +1,9 @@
 # MédicLab - Agenda & Gestion Médicale
 
 ## Présentation générale
-**MédicLab** est un SaaS multi-cabinets conçu pour les professionnels de santé indépendants (notamment adapté à l'exercice libéral et aux contextes médicaux francophones et africains, avec prise en charge du FCFA, Wave, Orange Money, etc.). Chaque praticien crée son propre compte et dispose d'un espace totalement isolé (patients, rendez-vous, consultations, ordonnances) grâce à l'authentification et à l'isolation multi-tenant Supabase.
+**MédicLab** est un SaaS multi-cabinets pour les professionnels de santé indépendants, pensé pour l'exercice libéral et les contextes médicaux francophones et africains (FCFA, Wave, Orange Money, etc.). Chaque praticien crée son propre compte et dispose d'un espace isolé (patients, rendez-vous, consultations, ordonnances) grâce à l'authentification et à l'isolation multi-tenant Supabase.
 
-Elle permet de gérer efficacement le flux quotidien du cabinet : de la prise de rendez-vous jusqu'au suivi post-consultation, en passant par la gestion de la salle d'attente, les dossiers médicaux patients, la rédaction d'ordonnances imprimables et les rappels WhatsApp aux patients.
+Elle couvre le flux quotidien du cabinet, de la prise de rendez-vous au suivi post-consultation : salle d'attente, dossiers médicaux patients, rédaction d'ordonnances imprimables et rappels WhatsApp aux patients.
 
 ---
 
@@ -99,7 +99,7 @@ Elle permet de gérer efficacement le flux quotidien du cabinet : de la prise de
 | **Backend** | Supabase (Postgres + Auth) | Authentification, base de données et API générée automatiquement |
 | **Isolation des données** | Row Level Security (Postgres) | Chaque praticien ne peut lire/écrire que ses propres données |
 
-> **Important** : MédicLab est un SaaS multi-cabinets. Chaque professionnel de santé crée son propre compte (email + mot de passe, confirmation par email) et toutes ses données (patients, rendez-vous, consultations, ordonnances) sont stockées côté serveur dans une base Postgres Supabase, isolées des autres cabinets par des policies RLS. Un backend Supabase (projet + variables d'environnement) est donc requis pour faire fonctionner l'application — voir la section Démarrage ci-dessous. L'abonnement payant n'est pas encore implémenté à ce stade.
+> **Important** : les données de chaque cabinet (patients, rendez-vous, consultations, ordonnances) sont stockées côté serveur dans une base Postgres Supabase, isolées des autres cabinets par des policies RLS. L'application a donc besoin d'un backend Supabase (projet + variables d'environnement) pour fonctionner : voir la section Démarrage ci-dessous. L'abonnement payant n'est pas encore implémenté à ce stade.
 
 ---
 

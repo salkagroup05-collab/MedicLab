@@ -1073,7 +1073,7 @@ export const ReferralLetterModal: React.FC<ReferralLetterModalProps> = ({
         <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between no-print text-xs">
           <div className="flex items-center gap-2 text-slate-500">
             <Sparkles className="w-4 h-4 text-indigo-500" />
-            <span className="hidden sm:inline">Pré-rempli intelligemment avec le dossier patient & notes cliniques SOAP.</span>
+            <span className="hidden sm:inline">Pré-rempli avec le dossier patient et les notes cliniques SOAP.</span>
           </div>
 
           <div className="flex items-center gap-2">

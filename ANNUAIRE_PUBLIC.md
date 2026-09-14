@@ -2,7 +2,7 @@
 
 ## Contexte
 
-MédicLab est aujourd'hui un SaaS 100% B2B : chaque praticien s'inscrit, se connecte et gère son propre cabinet (agenda, patients, ordonnances) dans un espace totalement isolé (`practitioner_id = auth.uid()`). Il n'existe aucune page publique — tout, y compris la page d'accueil, est gardé derrière l'authentification (`src/main.tsx`), puis derrière la validation de l'abonnement/essai (`App.tsx`).
+MédicLab est aujourd'hui un SaaS 100% B2B : chaque praticien s'inscrit, se connecte et gère son propre cabinet (agenda, patients, ordonnances) dans un espace totalement isolé (`practitioner_id = auth.uid()`). Il n'existe aucune page publique : tout, y compris la page d'accueil, reste derrière l'authentification (`src/main.tsx`), puis derrière la validation de l'abonnement/essai (`App.tsx`).
 
 Le besoin exprimé : permettre à des **patients (non connectés)** de **rechercher et trouver des professionnels de santé** déjà inscrits sur MédicLab (nom, spécialité, ville, contact). Décisions confirmées avec l'utilisateur :
 - Portée = **annuaire public de consultation** (recherche + fiche contact), **pas** de prise de RDV en ligne pour cette phase.
