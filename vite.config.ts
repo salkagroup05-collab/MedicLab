@@ -2,10 +2,41 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
+import {VitePWA} from 'vite-plugin-pwa';
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      VitePWA({
+        registerType: 'autoUpdate',
+        includeAssets: ['favicon.svg', 'favicon.ico'],
+        manifest: {
+          name: 'MédicLab - Agenda & Gestion Médicale',
+          short_name: 'MédicLab',
+          description:
+            "Plateforme complète pour professionnels de santé : gestion des rendez-vous, rappels WhatsApp automatisés, planning interactif, dossiers patients avec suivi des règlements, lettres d'orientation pour spécialistes et prescriptions.",
+          lang: 'fr',
+          start_url: '/',
+          scope: '/',
+          display: 'standalone',
+          theme_color: '#2563eb',
+          background_color: '#f8fafc',
+          icons: [
+            {src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png'},
+            {src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png'},
+            {src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png'},
+            {
+              src: 'maskable-icon-512x512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'maskable',
+            },
+          ],
+        },
+      }),
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
