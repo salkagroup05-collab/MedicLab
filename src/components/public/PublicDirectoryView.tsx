@@ -77,7 +77,7 @@ export const PublicDirectoryView: React.FC = () => {
             </div>
 
             <a
-              href="/"
+              href="/connexion"
               className="text-xs font-semibold text-blue-600 hover:text-blue-800 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
             >
               Espace praticien →

@@ -30,8 +30,12 @@ const getPasswordStrength = (password: string): number => {
   return Math.min(score, 3);
 };
 
-export const AuthScreen: React.FC = () => {
-  const [mode, setMode] = useState<Mode>('signIn');
+interface AuthScreenProps {
+  initialMode?: Mode;
+}
+
+export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'signIn' }) => {
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [name, setName] = useState('');
   const [specialty, setSpecialty] = useState(MEDICAL_SPECIALTIES[0]);
   const [email, setEmail] = useState('');

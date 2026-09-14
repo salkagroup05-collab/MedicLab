@@ -13,7 +13,7 @@ export const NotFoundPage: React.FC = () => {
           </span>
         </a>
         <a
-          href="/"
+          href="/connexion"
           className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white text-[13px] font-semibold text-slate-900 hover:bg-slate-50"
         >
           Se connecter
