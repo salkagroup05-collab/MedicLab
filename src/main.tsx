@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { Loader2 } from 'lucide-react';
 import App from './App.tsx';
 import { AuthScreen } from './components/AuthScreen.tsx';
+import { NotFoundPage } from './components/NotFoundPage.tsx';
 import { PublicDirectoryView } from './components/public/PublicDirectoryView.tsx';
 import { useSession } from './hooks/useSession.ts';
 import './index.css';
@@ -22,8 +23,10 @@ function AuthenticatedRoot() {
 }
 
 function Root() {
-  if (window.location.pathname === '/annuaire') return <PublicDirectoryView />;
-  return <AuthenticatedRoot />;
+  const path = window.location.pathname;
+  if (path === '/annuaire') return <PublicDirectoryView />;
+  if (path === '/') return <AuthenticatedRoot />;
+  return <NotFoundPage />;
 }
 
 createRoot(document.getElementById('root')!).render(
