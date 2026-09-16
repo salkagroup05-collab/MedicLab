@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+@theme {
+  /* Teintes de texte sur fond bleu-900 (nav, hero) */
+  --color-hero-nav-link: #c7d7f5;
+  --color-hero-body: #dbe7fb;
+  --color-hero-microcopy: #a9c3ee;
+  --color-hero-stat-label: #bdd2f3;
+
+  /* Ombre douce réutilisable (cartes, capture d'écran) */
+  --shadow-soft: 0 18px 40px -24px rgba(15, 23, 42, 0.35);
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
