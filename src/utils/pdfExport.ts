@@ -118,19 +118,12 @@ export function generatePatientDossierPdf(
   doc.text(`Tél : ${doctor.phone || 'Non renseigné'} | Email : ${doctor.email || ''}`, margin, cursorY);
   cursorY += 4;
 
-  // Ordre et Numéros légaux à droite
+  // Date d'édition à droite
   const rightColX = pageWidth - margin;
-  let rightY = margin;
+  const rightY = margin;
   doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 115, 130);
-  if (doctor.professionalOrderNumber) {
-    doc.text(`N° Ordre : ${doctor.professionalOrderNumber}`, rightColX, rightY, { align: 'right' });
-    rightY += 4;
-  }
-  if (doctor.ninea) {
-    doc.text(`N° NINEA : ${doctor.ninea}`, rightColX, rightY, { align: 'right' });
-    rightY += 4;
-  }
   doc.text(`Édité le : ${formatDateFr(getTodayDateString())}`, rightColX, rightY, { align: 'right' });
 
   cursorY = Math.max(cursorY, rightY + 3);
@@ -655,13 +648,6 @@ export function generatePatientDossierPdf(
   doc.setTextColor(30, 58, 138);
   doc.text(`${doctor.title} ${doctor.name}`, stampX, signY + 14);
 
-  if (doctor.professionalOrderNumber) {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
-    doc.setTextColor(100, 116, 139);
-    doc.text(`N° Ordre : ${doctor.professionalOrderNumber}`, stampX, signY + 19);
-  }
-
   // --- Numérotation de toutes les pages ---
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
@@ -761,21 +747,12 @@ export function generateReferralLetterPdf(
   doc.text(`Tél : ${doctor.phone || 'Non renseigné'} | Email : ${doctor.email || ''}`, margin, cursorY);
   cursorY += 4;
 
-  // Colonne droite : Numéros légaux & Date
+  // Colonne droite : Date
   const rightColX = pageWidth - margin;
-  let rightY = margin;
-  doc.setFontSize(8);
-  doc.setTextColor(100, 115, 130);
-  if (doctor.professionalOrderNumber) {
-    doc.text(`N° Ordre : ${doctor.professionalOrderNumber}`, rightColX, rightY, { align: 'right' });
-    rightY += 4;
-  }
-  if (doctor.ninea) {
-    doc.text(`N° NINEA : ${doctor.ninea}`, rightColX, rightY, { align: 'right' });
-    rightY += 4;
-  }
+  const rightY = margin;
   const dateFormatted = formatDateFr(letterData.date || getTodayDateString());
   const cityText = letterData.doctorCity || doctor.city || 'Dakar';
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(30, 41, 59);
   doc.text(`Fait à ${cityText}, le ${dateFormatted}`, rightColX, rightY, { align: 'right' });
@@ -1085,13 +1062,7 @@ export function generateReferralLetterPdf(
   doc.setFontSize(8);
   doc.setTextColor(71, 85, 105);
   doc.text(doctor.specialty || 'Médecin Généraliste', signX, cursorY);
-  cursorY += 3.5;
-  if (doctor.professionalOrderNumber) {
-    doc.text(`N° Ordre : ${doctor.professionalOrderNumber}`, signX, cursorY);
-    cursorY += 4;
-  } else {
-    cursorY += 1;
-  }
+  cursorY += 1;
 
   // Boîte cachet
   doc.setDrawColor(203, 213, 225);
