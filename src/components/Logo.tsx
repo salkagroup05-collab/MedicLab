@@ -6,7 +6,7 @@ interface LogoMarkProps {
 }
 
 /**
- * MédicLab brand mark: blue tile (radius = 28% of side) with an off-center
+ * SunuMed brand mark: blue tile (radius = 28% of side) with an off-center
  * cross — vertical bar at full opacity, horizontal bar at 55% opacity.
  * Scales via the SVG viewBox, so a single markup works at every size.
  */

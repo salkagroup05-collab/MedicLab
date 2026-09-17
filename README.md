@@ -1,7 +1,7 @@
-# MédicLab - Agenda & Gestion Médicale
+# SunuMed - Agenda & Gestion Médicale
 
 ## Présentation générale
-**MédicLab** est un SaaS multi-cabinets pour les professionnels de santé indépendants, pensé pour l'exercice libéral et les contextes médicaux francophones et africains (FCFA, Wave, Orange Money, etc.). Chaque praticien crée son propre compte et dispose d'un espace isolé (patients, rendez-vous, consultations, ordonnances) grâce à l'authentification et à l'isolation multi-tenant Supabase.
+**SunuMed** est un SaaS multi-cabinets pour les professionnels de santé indépendants, pensé pour l'exercice libéral et les contextes médicaux francophones et africains (FCFA, Wave, Orange Money, etc.). Chaque praticien crée son propre compte et dispose d'un espace isolé (patients, rendez-vous, consultations, ordonnances) grâce à l'authentification et à l'isolation multi-tenant Supabase.
 
 Elle couvre le flux quotidien du cabinet, de la prise de rendez-vous au suivi post-consultation : salle d'attente, dossiers médicaux patients, rédaction d'ordonnances imprimables et rappels WhatsApp aux patients.
 

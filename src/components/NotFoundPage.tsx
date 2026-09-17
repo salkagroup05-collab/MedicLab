@@ -9,7 +9,7 @@ export const NotFoundPage: React.FC = () => {
         <a href="/" className="flex items-center gap-3">
           <LogoMark size={36} />
           <span className="text-lg font-bold tracking-tight text-slate-900">
-            Médic<span className="text-blue-600">Lab</span>
+            Sunu<span className="text-blue-600">Med</span>
           </span>
         </a>
         <a
@@ -99,8 +99,8 @@ export const NotFoundPage: React.FC = () => {
 
           <p className="mt-7 text-[13px] text-slate-500">
             Le problème persiste ?{' '}
-            <a href="mailto:contact@mediclab.sn" className="font-semibold text-blue-600 hover:text-blue-800">
-              Écrivez à l'équipe MédicLab
+            <a href="mailto:contact@sunumed.sn" className="font-semibold text-blue-600 hover:text-blue-800">
+              Écrivez à l'équipe SunuMed
             </a>
           </p>
         </div>
@@ -110,7 +110,7 @@ export const NotFoundPage: React.FC = () => {
         <div className="flex items-center gap-2.5">
           <LogoMark size={26} />
           <span className="text-sm font-bold text-white">
-            Médic<span className="text-blue-400">Lab</span>
+            Sunu<span className="text-blue-400">Med</span>
           </span>
           <span className="text-xs text-slate-400">Erreur 404</span>
         </div>

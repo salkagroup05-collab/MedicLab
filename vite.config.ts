@@ -13,8 +13,8 @@ export default defineConfig(() => {
         registerType: 'autoUpdate',
         includeAssets: ['favicon.svg', 'favicon.ico'],
         manifest: {
-          name: 'MédicLab - Agenda & Gestion Médicale',
-          short_name: 'MédicLab',
+          name: 'SunuMed - Agenda & Gestion Médicale',
+          short_name: 'SunuMed',
           description:
             "Plateforme complète pour professionnels de santé : gestion des rendez-vous, rappels WhatsApp automatisés, planning interactif, dossiers patients avec suivi des règlements, lettres d'orientation pour spécialistes et prescriptions.",
           lang: 'fr',

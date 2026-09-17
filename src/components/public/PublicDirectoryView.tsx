@@ -70,7 +70,7 @@ export const PublicDirectoryView: React.FC = () => {
               <LogoMark size={40} className="rounded-xl shadow-xs" />
               <div>
                 <span className="font-bold text-slate-900 text-base sm:text-lg leading-none tracking-tight">
-                  Médic<span className="text-blue-600">Lab</span>
+                  Sunu<span className="text-blue-600">Med</span>
                 </span>
                 <p className="text-xs text-slate-500 font-medium">Trouver un professionnel de santé</p>
               </div>

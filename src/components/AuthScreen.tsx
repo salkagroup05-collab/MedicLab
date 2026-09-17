@@ -435,7 +435,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'signIn' }
         </p>
       </>
     );
-    leftFooter = 'Besoin d\'aide ? contact@mediclab.sn';
+    leftFooter = 'Besoin d\'aide ? contact@sunumed.sn';
 
     rightContent = (
       <>
@@ -505,7 +505,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'signIn' }
           <div className="flex items-center gap-3">
             <LogoMark size={36} />
             <span className="text-lg font-bold text-white tracking-tight">
-              Médic<span className="text-blue-300">Lab</span>
+              Sunu<span className="text-blue-300">Med</span>
             </span>
           </div>
           <AnimatePresence mode="wait" initial={false}>

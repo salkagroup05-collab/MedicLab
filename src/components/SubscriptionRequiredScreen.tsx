@@ -22,7 +22,7 @@ export const SubscriptionRequiredScreen: React.FC<SubscriptionRequiredScreenProp
             <LogoMark size={48} />
           </div>
           <h1 className="text-xl font-bold text-slate-900">
-            Médic<span className="text-blue-600">Lab</span>
+            Sunu<span className="text-blue-600">Med</span>
           </h1>
         </div>
 

@@ -363,11 +363,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
             </div>
 
-            {/* Annuaire Public MédicLab */}
+            {/* Annuaire Public SunuMed */}
             <div className="bg-indigo-50/70 border border-indigo-200 rounded-xl p-4 space-y-3 mt-4">
               <div className="flex items-center gap-2">
                 <Globe2 className="w-5 h-5 text-indigo-600" />
-                <h4 className="font-bold text-slate-900 text-xs">Annuaire Public MédicLab</h4>
+                <h4 className="font-bold text-slate-900 text-xs">Annuaire Public SunuMed</h4>
               </div>
 
               <label className="flex items-start gap-2.5 cursor-pointer">
@@ -381,7 +381,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <span className="font-semibold text-slate-800 block">Être visible dans l'annuaire</span>
                   <span className="text-[11px] text-slate-500">
                     Permet aux patients (non connectés) de trouver votre cabinet depuis la page publique
-                    "Trouver un professionnel" de MédicLab.
+                    "Trouver un professionnel" de SunuMed.
                   </span>
                 </span>
               </label>

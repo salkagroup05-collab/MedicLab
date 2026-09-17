@@ -139,7 +139,7 @@ export const LandingPage: React.FC = () => {
               <a href="/" className="flex items-center gap-3 shrink-0">
                 <LogoMark size={36} />
                 <span className="text-lg font-bold tracking-tight text-white">
-                  Médic<span className="text-blue-300">Lab</span>
+                  Sunu<span className="text-blue-300">Med</span>
                 </span>
               </a>
               <nav className="hidden md:flex items-center gap-7">
@@ -242,7 +242,7 @@ export const LandingPage: React.FC = () => {
                 L'agenda et les dossiers de votre cabinet, tenus au même endroit.
               </h1>
               <p className="mt-5 text-base sm:text-[17px] leading-relaxed text-hero-body max-w-[620px]">
-                MédicLab gère le flux quotidien du praticien indépendant : prise de rendez-vous, salle
+                SunuMed gère le flux quotidien du praticien indépendant : prise de rendez-vous, salle
                 d'attente, consultations SOAP, ordonnances imprimables, règlements en FCFA et rappels
                 WhatsApp.
               </p>
@@ -254,7 +254,7 @@ export const LandingPage: React.FC = () => {
                   Créer mon cabinet gratuitement <ArrowRight className="w-4 h-4" />
                 </a>
                 <a
-                  href="mailto:contact@mediclab.sn"
+                  href="mailto:contact@sunumed.sn"
                   className="inline-flex items-center gap-2 px-5 py-3.5 rounded-xl border border-white/35 text-white text-[15px] font-semibold hover:bg-white/10 transition-colors"
                 >
                   Parler à l'équipe
@@ -315,7 +315,7 @@ export const LandingPage: React.FC = () => {
             <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-soft">
               <img
                 src="/images/landing-agenda-preview.png"
-                alt="Agenda MédicLab"
+                alt="Agenda SunuMed"
                 width={1887}
                 height={910}
                 loading="lazy"
@@ -330,7 +330,7 @@ export const LandingPage: React.FC = () => {
         <div id="fonctionnalites" className="px-4 sm:px-6 lg:px-8 py-12 sm:py-14 scroll-mt-20">
           <div className="max-w-7xl mx-auto">
             <h2 className="text-2xl sm:text-[28px] font-bold tracking-tight text-slate-900 mb-7">
-              Ce que couvre MédicLab
+              Ce que couvre SunuMed
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {FEATURES.map((feature, i) => (
@@ -363,7 +363,7 @@ export const LandingPage: React.FC = () => {
                   Moins d'absences, grâce aux rappels WhatsApp
                 </h3>
                 <p className="text-sm leading-relaxed text-emerald-800 max-w-[640px]">
-                  MédicLab repère les rendez-vous des 24 à 48 prochaines heures, prépare un message
+                  SunuMed repère les rendez-vous des 24 à 48 prochaines heures, prépare un message
                   personnalisé avec la date, l'heure et le nom du cabinet, et l'envoie en un clic. Les
                   rappels déjà expédiés sont suivis.
                 </p>
@@ -440,7 +440,7 @@ export const LandingPage: React.FC = () => {
                   Créer mon cabinet gratuitement
                 </a>
                 <a
-                  href="mailto:contact@mediclab.sn"
+                  href="mailto:contact@sunumed.sn"
                   className="inline-flex items-center gap-2 px-5 py-[13px] rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-900 text-[15px] font-semibold transition-colors"
                 >
                   Contacter l'équipe
@@ -471,7 +471,7 @@ export const LandingPage: React.FC = () => {
               <div className="flex items-center gap-2.5">
                 <LogoMark size={28} />
                 <span className="text-sm font-bold text-white">
-                  Médic<span className="text-blue-400">Lab</span>
+                  Sunu<span className="text-blue-400">Med</span>
                 </span>
               </div>
               <span className="text-xs text-slate-400">
@@ -484,7 +484,7 @@ export const LandingPage: React.FC = () => {
               </a>
               <span>Confidentialité</span>
               <span>Secret médical</span>
-              <a href="mailto:contact@mediclab.sn" className="hover:text-white">
+              <a href="mailto:contact@sunumed.sn" className="hover:text-white">
                 Contact
               </a>
             </div>
