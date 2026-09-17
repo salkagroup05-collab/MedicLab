@@ -593,9 +593,9 @@ export const WhatsAppReminderModal: React.FC<WhatsAppReminderModalProps> = ({
                         <p className="whitespace-pre-wrap leading-relaxed font-sans">
                           {templateText
                             .replace(/\{civilite\}/g, 'M.')
-                            .replace(/\{nom\}/g, 'MOREAU')
-                            .replace(/\{prenom\}/g, 'Alexandre')
-                            .replace(/\{patient\}/g, 'Alexandre MOREAU')
+                            .replace(/\{nom\}/g, 'NDIAYE')
+                            .replace(/\{prenom\}/g, 'Ousmane')
+                            .replace(/\{patient\}/g, 'Ousmane NDIAYE')
                             .replace(/\{date\}/g, 'demain à 09:30')
                             .replace(/\{heure\}/g, '09:30')
                             .replace(/\{docteur\}/g, `${doctor.title} ${doctor.name}`)

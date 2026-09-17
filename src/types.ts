@@ -74,7 +74,7 @@ export interface Patient {
   lastName: string;
   gender: 'M' | 'F' | 'Autre';
   birthDate: string; // YYYY-MM-DD
-  ssn: string; // Numéro de sécurité sociale
+  ssn: string; // N° CNI / Numéro d'Identification Nationale (NIN)
   phone: string;
   email: string;
   address: string;

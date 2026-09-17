@@ -293,7 +293,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
                   <input
                     type="text"
                     required
-                    placeholder="Ex: Dupont"
+                    placeholder="Ex: Diallo"
                     value={newPatientLastName}
                     onChange={(e) => setNewPatientLastName(e.target.value)}
                     className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500"
@@ -304,7 +304,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
                   <input
                     type="text"
                     required
-                    placeholder="Ex: Marie"
+                    placeholder="Ex: Aïda"
                     value={newPatientFirstName}
                     onChange={(e) => setNewPatientFirstName(e.target.value)}
                     className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500"
@@ -316,7 +316,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
                   <label className="block text-[11px] font-semibold text-slate-600 mb-1">Téléphone mobile</label>
                   <input
                     type="tel"
-                    placeholder="06 00 00 00 00"
+                    placeholder="+221 77 123 45 67"
                     value={newPatientPhone}
                     onChange={(e) => setNewPatientPhone(e.target.value)}
                     className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500"

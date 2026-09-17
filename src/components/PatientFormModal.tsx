@@ -169,7 +169,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
                   id="pf-lastName"
                   type="text"
                   required
-                  placeholder="Ex: Martin"
+                  placeholder="Ex: Ndiaye"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500"
@@ -181,7 +181,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
                   id="pf-firstName"
                   type="text"
                   required
-                  placeholder="Ex: Julie"
+                  placeholder="Ex: Fatou"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500"
@@ -346,7 +346,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
                 <input
                   id="pf-emergencyName"
                   type="text"
-                  placeholder="Ex: Sophie Martin"
+                  placeholder="Ex: Fatou Ndiaye"
                   value={emergencyName}
                   onChange={(e) => setEmergencyName(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500"
@@ -368,7 +368,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
                 <input
                   id="pf-emergencyPhone"
                   type="tel"
-                  placeholder="06 99 88 77 66"
+                  placeholder="+221 76 234 56 78"
                   value={emergencyPhone}
                   onChange={(e) => setEmergencyPhone(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500"
