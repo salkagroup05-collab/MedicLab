@@ -1,7 +1,7 @@
 import React from 'react';
-import { Calendar, Users, User, FileText, BarChart3 } from 'lucide-react';
+import { Calendar, Users, User, FileText, BarChart3, Printer } from 'lucide-react';
 
-export type MainTab = 'agenda' | 'waiting' | 'patients' | 'prescriptions' | 'stats';
+export type MainTab = 'agenda' | 'waiting' | 'patients' | 'prescriptions' | 'blank-forms' | 'stats';
 
 interface NavigationProps {
   activeTab: MainTab;
@@ -40,6 +40,11 @@ export const Navigation: React.FC<NavigationProps> = ({
       id: 'prescriptions' as MainTab,
       label: 'Ordonnances & Documents',
       icon: FileText,
+    },
+    {
+      id: 'blank-forms' as MainTab,
+      label: 'Formulaires vierges',
+      icon: Printer,
     },
     {
       id: 'stats' as MainTab,

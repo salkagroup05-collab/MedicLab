@@ -38,6 +38,8 @@ import { AgendaView } from './components/AgendaView';
 import { WaitingRoomView } from './components/WaitingRoomView';
 import { PatientsView } from './components/PatientsView';
 import { PrescriptionsListView } from './components/PrescriptionsListView';
+import { BlankFormsView } from './components/BlankFormsView';
+import { BlankFormPrintModal, BlankFormType } from './components/BlankFormPrintModal';
 import { StatsView } from './components/StatsView';
 import { AppointmentModal } from './components/AppointmentModal';
 import { ConsultationModal } from './components/ConsultationModal';
@@ -124,6 +126,9 @@ export default function App({ session }: AppProps) {
   const [isPatientFormModalOpen, setIsPatientFormModalOpen] = useState(false);
   const [patientToEdit, setPatientToEdit] = useState<Patient | null>(null);
   const [selectedPatientForDossier, setSelectedPatientForDossier] = useState<Patient | null>(null);
+
+  const [isBlankFormModalOpen, setIsBlankFormModalOpen] = useState(false);
+  const [activeBlankFormType, setActiveBlankFormType] = useState<BlankFormType | null>(null);
 
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
@@ -405,6 +410,12 @@ export default function App({ session }: AppProps) {
     }
   };
 
+  // Blank Forms Handler
+  const handleOpenBlankForm = (formType: BlankFormType) => {
+    setActiveBlankFormType(formType);
+    setIsBlankFormModalOpen(true);
+  };
+
   const handleScheduleForPatient = (patient: Patient) => {
     setSelectedAppointment(null);
     setAppointmentDefaultDate(today);
@@ -600,6 +611,10 @@ export default function App({ session }: AppProps) {
           />
         )}
 
+        {activeTab === 'blank-forms' && (
+          <BlankFormsView onOpenBlankForm={handleOpenBlankForm} />
+        )}
+
         {activeTab === 'stats' && (
           <StatsView
             appointments={appointments}
@@ -663,6 +678,14 @@ export default function App({ session }: AppProps) {
         onClose={() => setIsPatientFormModalOpen(false)}
         onSave={handleSavePatient}
         initialPatient={patientToEdit}
+      />
+
+      {/* Blank Forms Preview & Print */}
+      <BlankFormPrintModal
+        isOpen={isBlankFormModalOpen}
+        onClose={() => setIsBlankFormModalOpen(false)}
+        doctor={doctor}
+        formType={activeBlankFormType}
       />
 
       {/* Practitioner Settings & Data Backup */}
