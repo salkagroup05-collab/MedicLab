@@ -384,7 +384,7 @@ export const LandingPage: React.FC = () => {
           </div>
           <div className="border border-[#e4ddd2] rounded-[18px] overflow-hidden bg-white shadow-soft">
             <img
-              src="/images/landing-agenda-preview.png"
+              src="/images/landing-agenda-preview.webp"
               alt="Vue agenda de SunuMed"
               width={1887}
               height={910}
@@ -483,7 +483,7 @@ export const LandingPage: React.FC = () => {
             </div>
             <div className="border border-[#e4ddd2] rounded-[18px] overflow-hidden bg-[#faf8f5]">
               <img
-                src="/images/landing-stats-preview.png"
+                src="/images/landing-stats-preview.webp"
                 alt="Aperçu de la vue Activité & honoraires de SunuMed"
                 width={1663}
                 height={723}
