@@ -2,16 +2,21 @@ import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion, MotionConfig } from 'motion/react';
 import {
   ArrowRight,
-  BarChart3,
+  Building2,
   Calendar,
+  CalendarCheck,
+  Check,
+  CheckCheck,
   ClipboardList,
+  Database,
   Download,
   FileText,
+  HeartPulse,
   Lock,
   Menu,
-  MessageCircle,
   Search,
   ShieldCheck,
+  Stethoscope,
   User,
   Users,
   Wallet,
@@ -21,9 +26,27 @@ import { LogoMark } from './Logo';
 
 const NAV_LINKS = [
   { label: 'Fonctionnalités', href: '#fonctionnalites' },
-  { label: 'Rappels WhatsApp', href: '#rappels-whatsapp' },
-  { label: 'Annuaire', href: '/annuaire' },
+  { label: 'Sécurité', href: '#securite' },
+  { label: 'Questions', href: '#questions' },
   { label: 'Se connecter', href: '/connexion' },
+] as const;
+
+const AUDIENCES = [
+  {
+    icon: Stethoscope,
+    title: 'Médecins généralistes',
+    description: 'Le flux complet de la journée, du premier rendez-vous au dossier classé.',
+  },
+  {
+    icon: HeartPulse,
+    title: 'Spécialistes',
+    description: 'Courriers confraternels pré-remplis et suivi des actes par spécialité.',
+  },
+  {
+    icon: Building2,
+    title: 'Petits cabinets',
+    description: 'Un espace par praticien, strictement séparé des autres.',
+  },
 ] as const;
 
 const FEATURES = [
@@ -55,34 +78,16 @@ const FEATURES = [
     description: "Ordonnances prêtes à imprimer et lettres d'orientation vers un spécialiste.",
   },
   {
-    icon: BarChart3,
-    title: 'Activité & honoraires',
-    description:
-      "Chiffre d'affaires par moyen de paiement, taux d'assiduité, annulations et absences.",
+    icon: Wallet,
+    title: 'Règlements en FCFA',
+    description: 'Wave, Orange Money, espèces, carte, chèque, mutuelle / IPM et tiers payant.',
   },
 ] as const;
 
-const STATS = [
-  { value: '30 j', label: "d'essai, tout inclus" },
-  { value: '7', label: 'moyens de règlement suivis' },
-  { value: '3', label: "vues d'agenda : jour, semaine, mois" },
-  { value: 'PDF', label: 'dossier patient exportable' },
-] as const;
-
-const TRUST_SIGNALS = [
-  { icon: ShieldCheck, label: 'Données isolées par cabinet (Postgres RLS)' },
-  { icon: Download, label: 'Données exportables à tout moment (JSON)' },
-  { icon: Wallet, label: 'Wave, Orange Money, espèces, carte, mutuelle / IPM' },
-  { icon: Lock, label: 'Secret médical respecté' },
-] as const;
-
-const STEPS = [
-  { title: 'Créez votre compte', description: 'Nom, email, mot de passe.' },
-  { title: 'Confirmez par email', description: 'Vous recevez le lien tout de suite.' },
-  {
-    title: 'Renseignez votre profil',
-    description: "Spécialité, numéro d'ordre professionnel, tarif de consultation.",
-  },
+const WHATSAPP_CHECKLIST = [
+  'Message pré-rempli, modifiable avant envoi',
+  'Envoi direct depuis le navigateur, sans logiciel tiers',
+  "Patients exclus d'un rappel en un clic",
 ] as const;
 
 const WHATSAPP_EXAMPLE = `Bonjour M. Diallo,
@@ -94,6 +99,42 @@ Nous vous confirmons votre rendez-vous médical avec le Dr. Fatou Sow (Médecine
 📋 Motif : Consultation de suivi
 
 ⚠️ En cas d'empêchement, merci de prévenir au moins 24h à l'avance.`;
+
+const SECURITY_ITEMS = [
+  {
+    icon: ShieldCheck,
+    title: 'Isolation par cabinet',
+    description:
+      "Des règles Row Level Security Postgres empêchent tout accès aux données d'un autre praticien, y compris en cas d'erreur applicative.",
+  },
+  {
+    icon: Lock,
+    title: 'Secret médical',
+    description:
+      "Accès par compte nominatif avec confirmation d'email. Les documents générés portent la mention légale de secret professionnel.",
+  },
+  {
+    icon: Download,
+    title: 'Export & réversibilité',
+    description:
+      'Export complet du cabinet au format JSON, réimportable. Dossiers patients exportables en PDF officiel.',
+  },
+  {
+    icon: Database,
+    title: 'Hébergement',
+    description:
+      'Base Postgres managée avec sauvegardes automatiques et connexions chiffrées de bout en bout.',
+  },
+] as const;
+
+const STEPS = [
+  { title: 'Créez votre compte', description: 'Nom, email, mot de passe.' },
+  { title: 'Confirmez par email', description: 'Vous recevez le lien tout de suite.' },
+  {
+    title: 'Renseignez votre profil',
+    description: "Spécialité, numéro d'ordre professionnel, tarif de consultation.",
+  },
+] as const;
 
 const FAQ = [
   {
@@ -108,6 +149,28 @@ const FAQ = [
     question: 'Quels moyens de paiement patients sont suivis ?',
     answer: 'Wave, Orange Money, espèces, carte, chèque, mutuelle / IPM et tiers payant.',
   },
+  {
+    question: 'Que se passe-t-il après les 30 jours ?',
+    answer:
+      "L'équipe vous propose une formule adaptée à votre cabinet. Vos données restent exportables dans tous les cas.",
+  },
+  {
+    question: 'Faut-il installer un logiciel ?',
+    answer: 'Non. SunuMed fonctionne dans le navigateur, sur ordinateur comme sur téléphone.',
+  },
+  {
+    question: 'Plusieurs praticiens peuvent-ils partager un cabinet ?',
+    answer:
+      'Chaque praticien crée son compte et son espace. Écrivez-nous pour une organisation à plusieurs praticiens.',
+  },
+  {
+    question: 'Les rappels WhatsApp sont-ils automatiques ?',
+    answer: 'SunuMed détecte les rendez-vous proches et prépare les messages ; vous validez l’envoi.',
+  },
+  {
+    question: 'Les ordonnances sont-elles à mon en-tête ?',
+    answer: "Oui : nom, spécialité, adresse et téléphone du cabinet, avec bloc signature.",
+  },
 ] as const;
 
 const fadeUp = {
@@ -118,7 +181,6 @@ const fadeUp = {
 
 export const LandingPage: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [showExample, setShowExample] = useState(false);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -131,41 +193,41 @@ export const LandingPage: React.FC = () => {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-[#faf8f5] text-[#1b2436]">
         {/* Top navigation */}
-        <div className="sticky top-0 z-50 bg-blue-900">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16 gap-4">
-              <a href="/" className="flex items-center gap-3 shrink-0">
-                <LogoMark size={36} />
-                <span className="text-lg font-bold tracking-tight text-white">
-                  Sunu<span className="text-blue-300">Med</span>
+        <div className="sticky top-0 z-50 bg-[rgba(250,248,245,0.92)] backdrop-blur-[10px] border-b border-[#e9e3da]">
+          <div className="max-w-[1180px] mx-auto px-4 sm:px-6">
+            <div className="flex items-center justify-between h-[68px] gap-4">
+              <a href="/" className="flex items-center gap-[11px] shrink-0 text-[#14294d]">
+                <LogoMark size={34} />
+                <span className="text-[19px] font-bold tracking-tight text-[#14294d]">
+                  Sunu<span className="text-[#2563eb]">Med</span>
                 </span>
               </a>
-              <nav className="hidden md:flex items-center gap-7">
+              <nav className="hidden md:flex items-center gap-[26px]">
                 {NAV_LINKS.map((link) => (
                   <a
                     key={link.href}
                     href={link.href}
-                    className="text-[13px] font-medium text-hero-nav-link hover:text-white"
+                    className="text-sm font-medium text-[#4a5568] hover:text-[#14294d]"
                   >
                     {link.label}
                   </a>
                 ))}
                 <a
                   href="/inscription"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-semibold transition-colors"
+                  className="inline-flex items-center gap-[7px] px-[17px] py-2.5 rounded-[10px] bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-sm font-semibold transition-colors"
                 >
-                  Créer mon cabinet
+                  Essayer 30 jours
                 </a>
               </nav>
               <div className="md:hidden flex items-center gap-2 shrink-0">
                 <a
                   href="/inscription"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-semibold transition-colors"
+                  className="inline-flex items-center gap-[7px] px-[17px] py-2.5 rounded-[10px] bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-sm font-semibold transition-colors"
                 >
                   <span className="sm:hidden">S'inscrire</span>
-                  <span className="hidden sm:inline">Créer mon cabinet</span>
+                  <span className="hidden sm:inline">Essayer 30 jours</span>
                 </a>
                 <button
                   type="button"
@@ -173,7 +235,7 @@ export const LandingPage: React.FC = () => {
                   aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
                   aria-expanded={menuOpen}
                   aria-controls="mobile-nav-panel"
-                  className="inline-flex items-center justify-center w-11 h-11 rounded-lg text-white hover:bg-white/10 transition-colors"
+                  className="inline-flex items-center justify-center w-11 h-11 rounded-lg text-[#14294d] hover:bg-black/5 transition-colors"
                 >
                   {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                 </button>
@@ -189,15 +251,15 @@ export const LandingPage: React.FC = () => {
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="md:hidden overflow-hidden border-t border-white/10"
+                className="md:hidden overflow-hidden border-t border-[#e9e3da]"
               >
-                <div className="px-4 sm:px-6 lg:px-8 py-2 flex flex-col">
+                <div className="px-4 sm:px-6 py-2 flex flex-col">
                   {NAV_LINKS.map((link) => (
                     <a
                       key={link.href}
                       href={link.href}
                       onClick={() => setMenuOpen(false)}
-                      className="min-h-11 flex items-center text-[15px] font-medium text-hero-nav-link hover:text-white"
+                      className="min-h-11 flex items-center text-[15px] font-medium text-[#4a5568] hover:text-[#14294d]"
                     >
                       {link.label}
                     </a>
@@ -209,276 +271,348 @@ export const LandingPage: React.FC = () => {
         </div>
 
         {/* Patient strip */}
-        <div className="bg-slate-50 border-b border-slate-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <span className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                <Search className="w-5 h-5" />
-              </span>
-              <div>
-                <div className="text-[15px] font-bold text-slate-900">Vous êtes un patient ?</div>
-                <div className="text-[13px] text-slate-500">
-                  Trouvez un professionnel de santé près de vous dans l'annuaire public.
-                </div>
-              </div>
-            </div>
+        <div className="bg-[#f1ece4] border-b border-[#e9e3da]">
+          <div className="max-w-[1180px] mx-auto px-4 sm:px-6 py-[11px] flex flex-wrap items-center gap-2.5 text-[13px] text-[#5b6472]">
+            <Search className="w-[15px] h-[15px] text-[#2563eb] shrink-0" />
+            <span>Vous êtes un patient ? Trouvez un professionnel de santé près de chez vous.</span>
             <a
               href="/annuaire"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-[13px] font-semibold text-slate-900 hover:bg-slate-50 transition-colors shrink-0 self-start sm:self-auto"
+              className="font-semibold text-[#2563eb] hover:text-[#1d4ed8] inline-flex items-center gap-[5px]"
             >
-              Ouvrir l'annuaire <ArrowRight className="w-3.5 h-3.5" />
+              Ouvrir l'annuaire <ArrowRight className="w-[13px] h-[13px]" />
             </a>
           </div>
         </div>
 
         {/* Hero */}
-        <div className="bg-blue-900 px-4 sm:px-6 lg:px-8 pt-16 pb-14 sm:pt-[72px] sm:pb-16">
-          <div className="max-w-7xl mx-auto">
-            <div className="max-w-[760px]">
-              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/12 border border-white/25 text-white text-xs font-semibold">
-                <ShieldCheck className="w-3.5 h-3.5" /> Données isolées par cabinet · Postgres RLS
+        <section className="max-w-[1180px] mx-auto px-4 sm:px-6 pt-14 sm:pt-[72px] pb-12 sm:pb-16">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(340px,1fr))] gap-10 sm:gap-12 items-center">
+            <div>
+              <span className="inline-flex items-center gap-2 px-3.5 py-[7px] rounded-full bg-white border border-[#e4ddd2] text-[12.5px] font-semibold text-[#14294d]">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#2563eb]" />
+                Dossiers isolés par cabinet · secret médical respecté
               </span>
-              <h1 className="mt-5 text-[34px] sm:text-[44px] lg:text-[52px] leading-[1.08] sm:leading-[1.06] font-extrabold tracking-tight text-white text-pretty">
-                L'agenda et les dossiers de votre cabinet, tenus au même endroit.
+              <h1 className="mt-[26px] font-['Newsreader',_Georgia,_serif] font-normal text-[38px] sm:text-[48px] lg:text-[56px] leading-[1.08] tracking-tight text-[#14294d] text-pretty">
+                Tout votre cabinet, tenu <span className="italic text-[#2563eb]">au même endroit</span>.
               </h1>
-              <p className="mt-5 text-base sm:text-[17px] leading-relaxed text-hero-body max-w-[620px]">
-                SunuMed gère le flux quotidien du praticien indépendant : prise de rendez-vous, salle
-                d'attente, consultations SOAP, ordonnances imprimables, règlements en FCFA et rappels
-                WhatsApp.
+              <p className="mt-[22px] text-[16px] sm:text-[17.5px] leading-[1.7] text-[#5b6472] max-w-[520px]">
+                Rendez-vous, salle d'attente, dossiers patients, consultations SOAP, ordonnances
+                imprimables et suivi des règlements. Un seul outil pour la journée du praticien
+                indépendant.
               </p>
-              <div className="flex flex-wrap items-center gap-3.5 sm:gap-4 mt-8">
+              <div className="flex flex-wrap items-center gap-3.5 mt-8">
                 <a
                   href="/inscription"
-                  className="inline-flex items-center gap-2 px-[22px] py-3.5 rounded-xl bg-white text-blue-900 text-[15px] font-bold hover:bg-blue-50 transition-colors"
+                  className="inline-flex items-center gap-[9px] px-6 py-[15px] rounded-xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-[15.5px] font-bold transition-colors"
                 >
-                  Créer mon cabinet gratuitement <ArrowRight className="w-4 h-4" />
+                  Essayer 30 jours <ArrowRight className="w-[17px] h-[17px]" />
                 </a>
                 <a
                   href="mailto:contact@sunumed.sn"
-                  className="inline-flex items-center gap-2 px-5 py-3.5 rounded-xl border border-white/35 text-white text-[15px] font-semibold hover:bg-white/10 transition-colors"
+                  className="inline-flex items-center gap-2 px-[22px] py-[15px] rounded-xl border border-[#d9d1c5] bg-white hover:bg-[#f5f1ea] text-[#14294d] text-[15.5px] font-semibold transition-colors"
                 >
                   Parler à l'équipe
                 </a>
-                <span className="text-[13px] text-hero-microcopy">
-                  30 jours d'essai gratuit · sans carte bancaire
-                </span>
+              </div>
+              <div className="mt-4 text-[13.5px] text-[#6b6255]">
+                Sans carte bancaire · toutes les fonctionnalités
               </div>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-px mt-12 sm:mt-14 bg-white/18 border border-white/18 rounded-xl overflow-hidden">
-              {STATS.map((stat) => (
-                <div key={stat.label} className="p-5 sm:p-[22px] bg-blue-900">
-                  <div className="text-2xl sm:text-[28px] font-extrabold text-white">{stat.value}</div>
-                  <div className="text-xs font-medium text-hero-stat-label mt-1">{stat.label}</div>
+            <div className="relative min-w-0">
+              <img
+                src="/images/landing-hero-praticien.webp"
+                alt="Médecin en consultation dans son cabinet"
+                width={1100}
+                height={733}
+                loading="eager"
+                decoding="async"
+                className="w-full h-[300px] sm:h-[380px] lg:h-[440px] object-cover rounded-[20px]"
+              />
+              <div className="absolute left-3 sm:-left-[18px] bottom-6 bg-white border border-[#e4ddd2] rounded-2xl px-[18px] py-3.5 shadow-soft flex items-center gap-3 max-w-[280px]">
+                <span className="w-[34px] h-[34px] rounded-[10px] bg-[#eff4fe] text-[#2563eb] flex items-center justify-center shrink-0">
+                  <CalendarCheck className="w-[18px] h-[18px]" />
+                </span>
+                <div>
+                  <div className="text-[13.5px] font-bold text-[#14294d]">Consultation de suivi</div>
+                  <div className="text-[12.5px] text-[#6b6255]">10:30 · confirmé</div>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Trust / security strip */}
-        <div className="bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 py-6">
-          <div className="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-5 sm:gap-6">
-            {TRUST_SIGNALS.map((item, i) => (
+          <div className="mt-14 sm:mt-16 border-t border-[#e4ddd2] pt-7 grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-x-10 gap-y-6 items-start">
+            <div className="text-[13px] font-bold tracking-[0.09em] uppercase text-[#6b6255] leading-relaxed">
+              Pensé pour
+              <br />
+              l'exercice libéral
+            </div>
+            {AUDIENCES.map((audience, i) => (
               <motion.div
-                key={item.label}
+                key={audience.title}
                 {...fadeUp}
                 transition={{ duration: 0.3, delay: i * 0.05 }}
-                className="flex items-center gap-2.5"
+                className="flex items-start gap-[11px]"
               >
-                <item.icon className="w-4 h-4 text-blue-600 shrink-0" />
-                <span className="text-[13px] leading-snug text-slate-600">{item.label}</span>
+                <audience.icon className="w-[18px] h-[18px] text-[#2563eb] shrink-0 mt-0.5" />
+                <div>
+                  <div className="text-[14.5px] font-bold text-[#14294d]">{audience.title}</div>
+                  <div className="text-[13px] leading-relaxed text-[#5b6472] mt-[3px]">
+                    {audience.description}
+                  </div>
+                </div>
               </motion.div>
             ))}
           </div>
-        </div>
+        </section>
 
-        {/* Product screenshot */}
-        <div className="bg-slate-50 border-b border-slate-200 px-4 sm:px-6 lg:px-8 py-12 sm:py-14">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5 mb-6">
-              <div>
-                <h2 className="text-2xl sm:text-[28px] font-bold tracking-tight text-slate-900">
-                  Votre journée, en une vue
-                </h2>
-                <p className="mt-2 text-[15px] text-slate-500">
-                  Planning, statuts de rendez-vous, salle d'attente et rappels dans une seule interface.
-                </p>
+        {/* Agenda screenshot */}
+        <section className="max-w-[1180px] mx-auto px-4 sm:px-6 pb-14 sm:pb-[72px]">
+          <div className="flex flex-wrap items-end justify-between gap-4 mb-[22px]">
+            <div>
+              <div className="text-xs font-bold tracking-[0.09em] uppercase text-[#6b6255]">
+                L'agenda
               </div>
-              <a
-                href="#fonctionnalites"
-                className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-blue-600 hover:text-blue-800 shrink-0"
-              >
-                Voir toutes les vues <ArrowRight className="w-3.5 h-3.5" />
-              </a>
+              <h2 className="mt-2.5 font-['Newsreader',_Georgia,_serif] font-normal text-[30px] sm:text-4xl leading-[1.15] text-[#14294d]">
+                Votre journée, d'un seul regard
+              </h2>
             </div>
-            <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-soft">
+            <p className="text-[14.5px] leading-relaxed text-[#5b6472] max-w-[380px]">
+              Jour, semaine ou mois. Chaque rendez-vous porte son statut, son motif, son tarif et son
+              règlement.
+            </p>
+          </div>
+          <div className="border border-[#e4ddd2] rounded-[18px] overflow-hidden bg-white shadow-soft">
+            <img
+              src="/images/landing-agenda-preview.png"
+              alt="Vue agenda de SunuMed"
+              width={1887}
+              height={910}
+              loading="lazy"
+              decoding="async"
+              className="block w-full h-auto"
+            />
+          </div>
+        </section>
+
+        {/* Feature grid */}
+        <section
+          id="fonctionnalites"
+          className="bg-white border-y border-[#eee7dd] scroll-mt-20"
+        >
+          <div className="max-w-[1180px] mx-auto px-4 sm:px-6 py-14 sm:py-[72px]">
+            <div className="text-xs font-bold tracking-[0.09em] uppercase text-[#6b6255]">
+              Le cabinet au complet
+            </div>
+            <h2 className="mt-2.5 mb-9 font-['Newsreader',_Georgia,_serif] font-normal text-[32px] sm:text-[40px] leading-[1.12] text-[#14294d] max-w-[620px]">
+              De la prise de rendez-vous au dossier archivé
+            </h2>
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(290px,1fr))] gap-x-11 gap-y-[34px]">
+              {FEATURES.map((feature, i) => (
+                <motion.div
+                  key={feature.title}
+                  {...fadeUp}
+                  transition={{ duration: 0.3, delay: i * 0.05 }}
+                >
+                  <div className="w-[38px] h-[38px] rounded-[10px] bg-[#eff4fe] text-[#2563eb] flex items-center justify-center">
+                    <feature.icon className="w-[19px] h-[19px]" />
+                  </div>
+                  <h3 className="mt-4 mb-[7px] text-[17px] font-bold text-[#14294d]">
+                    {feature.title}
+                  </h3>
+                  <p className="text-[14.5px] leading-relaxed text-[#5b6472]">{feature.description}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* WhatsApp callout */}
+        <section id="rappels-whatsapp" className="max-w-[1180px] mx-auto px-4 sm:px-6 py-14 sm:py-[72px] scroll-mt-20">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-11 items-center">
+            <div>
+              <div className="text-xs font-bold tracking-[0.09em] uppercase text-[#059669]">
+                Rappels WhatsApp
+              </div>
+              <h2 className="mt-2.5 mb-4 font-['Newsreader',_Georgia,_serif] font-normal text-[32px] sm:text-[40px] leading-[1.12] text-[#14294d]">
+                Moins de patients qui ne viennent pas
+              </h2>
+              <p className="mb-[22px] text-base leading-[1.75] text-[#5b6472] max-w-[480px]">
+                SunuMed repère les rendez-vous des 24 à 48 prochaines heures, prépare un message avec
+                la date, l'heure et le nom du cabinet, et l'envoie en un clic. Les rappels déjà expédiés
+                restent suivis.
+              </p>
+              <div className="flex flex-col gap-3">
+                {WHATSAPP_CHECKLIST.map((item) => (
+                  <div key={item} className="flex items-start gap-2.5 text-[14.5px] leading-snug text-[#14294d]">
+                    <Check className="w-[17px] h-[17px] text-[#059669] shrink-0 mt-0.5" />
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="bg-[#ECE5DD] rounded-[18px] p-6 border border-[#e0d8cc]">
+              <div className="max-w-[420px] bg-white rounded-xl rounded-tl-[2px] shadow-sm px-[18px] py-4">
+                <p className="text-[13.5px] leading-[1.75] text-slate-800 whitespace-pre-line m-0">
+                  {WHATSAPP_EXAMPLE}
+                </p>
+                <div className="flex justify-end items-center gap-[5px] mt-2 text-[11px] text-slate-400">
+                  10:24 <CheckCheck className="w-3.5 h-3.5 text-[#34b7f1]" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Activity / earnings screenshot */}
+        <section className="bg-white border-y border-[#eee7dd]">
+          <div className="max-w-[1180px] mx-auto px-4 sm:px-6 py-14 sm:py-[72px]">
+            <div className="flex flex-wrap items-end justify-between gap-4 mb-[26px]">
+              <div>
+                <div className="text-xs font-bold tracking-[0.09em] uppercase text-[#6b6255]">
+                  Activité & honoraires
+                </div>
+                <h2 className="mt-2.5 font-['Newsreader',_Georgia,_serif] font-normal text-[30px] sm:text-4xl leading-[1.15] text-[#14294d]">
+                  Ce que le cabinet a réellement encaissé
+                </h2>
+              </div>
+              <p className="text-[14.5px] leading-relaxed text-[#5b6472] max-w-[380px]">
+                Chiffre d'affaires par moyen de paiement, taux d'assiduité, annulations et absences,
+                répartition par type de consultation.
+              </p>
+            </div>
+            <div className="border border-[#e4ddd2] rounded-[18px] overflow-hidden bg-[#faf8f5]">
               <img
-                src="/images/landing-agenda-preview.png"
-                alt="Agenda SunuMed"
-                width={1887}
-                height={910}
+                src="/images/landing-stats-preview.png"
+                alt="Aperçu de la vue Activité & honoraires de SunuMed"
+                width={1663}
+                height={723}
                 loading="lazy"
                 decoding="async"
                 className="block w-full h-auto"
               />
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Feature grid */}
-        <div id="fonctionnalites" className="px-4 sm:px-6 lg:px-8 py-12 sm:py-14 scroll-mt-20">
-          <div className="max-w-7xl mx-auto">
-            <h2 className="text-2xl sm:text-[28px] font-bold tracking-tight text-slate-900 mb-7">
-              Ce que couvre SunuMed
+        {/* Security */}
+        <section id="securite" className="bg-[#14294d] scroll-mt-20">
+          <div className="max-w-[1180px] mx-auto px-4 sm:px-6 py-16 sm:py-[78px]">
+            <div className="text-xs font-bold tracking-[0.09em] uppercase text-[#93b4e8]">
+              Sécurité & conformité
+            </div>
+            <h2 className="mt-2.5 mb-3.5 font-['Newsreader',_Georgia,_serif] font-normal text-[32px] sm:text-[40px] leading-[1.12] text-white max-w-[640px]">
+              Les dossiers de vos patients restent les vôtres
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {FEATURES.map((feature, i) => (
+            <p className="mb-11 text-base leading-[1.75] text-[#dbe7fb] max-w-[620px]">
+              Chaque cabinet dispose de son espace, séparé des autres au niveau de la base de données,
+              et peut récupérer l'intégralité de ses données à tout moment.
+            </p>
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-px bg-white/[0.16] border border-white/[0.16] rounded-2xl overflow-hidden">
+              {SECURITY_ITEMS.map((item, i) => (
                 <motion.div
-                  key={feature.title}
+                  key={item.title}
                   {...fadeUp}
                   transition={{ duration: 0.3, delay: i * 0.05 }}
-                  className="border border-slate-200 rounded-xl p-[22px] bg-white"
+                  className="bg-[#14294d] p-7"
                 >
-                  <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                    <feature.icon className="w-[18px] h-[18px]" />
-                  </div>
-                  <h3 className="mt-3.5 mb-1.5 text-base font-bold text-slate-900">{feature.title}</h3>
-                  <p className="text-sm leading-relaxed text-slate-500">{feature.description}</p>
+                  <item.icon className="w-5 h-5 text-[#93b4e8]" />
+                  <h3 className="mt-4 mb-2 text-base font-bold text-white">{item.title}</h3>
+                  <p className="text-sm leading-relaxed text-[#c7d7f5]">{item.description}</p>
                 </motion.div>
               ))}
             </div>
           </div>
-        </div>
-
-        {/* WhatsApp callout */}
-        <div id="rappels-whatsapp" className="px-4 sm:px-6 lg:px-8 mb-12 sm:mb-14 scroll-mt-20">
-          <div className="max-w-7xl mx-auto border border-emerald-200 bg-emerald-50 rounded-2xl p-6 sm:p-8">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 sm:gap-8">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
-                <MessageCircle className="w-6 h-6" />
-              </div>
-              <div className="flex-1">
-                <h3 className="mb-1.5 text-lg sm:text-xl font-bold text-emerald-900">
-                  Moins d'absences, grâce aux rappels WhatsApp
-                </h3>
-                <p className="text-sm leading-relaxed text-emerald-800 max-w-[640px]">
-                  SunuMed repère les rendez-vous des 24 à 48 prochaines heures, prépare un message
-                  personnalisé avec la date, l'heure et le nom du cabinet, et l'envoie en un clic. Les
-                  rappels déjà expédiés sont suivis.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowExample((v) => !v)}
-                aria-expanded={showExample}
-                aria-controls="whatsapp-example-message"
-                className="inline-flex items-center gap-2 px-[18px] py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shrink-0 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800"
-              >
-                {showExample ? 'Masquer l’exemple' : 'Voir un exemple de message'}
-              </button>
-            </div>
-            <AnimatePresence initial={false}>
-              {showExample && (
-                <motion.div
-                  id="whatsapp-example-message"
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.22 }}
-                  className="overflow-hidden"
-                >
-                  <div className="mt-6 rounded-xl bg-[#ECE5DD] p-4 sm:p-5">
-                    <div className="max-w-[420px] bg-white rounded-lg rounded-tl-none shadow-sm p-3.5">
-                      <p className="text-[13px] leading-relaxed text-slate-800 whitespace-pre-line">
-                        {WHATSAPP_EXAMPLE}
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
+        </section>
 
         {/* How it works */}
-        <div className="px-4 sm:px-6 lg:px-8 mb-12 sm:mb-14">
-          <div className="max-w-7xl mx-auto">
-            <h2 className="text-2xl sm:text-[28px] font-bold tracking-tight text-slate-900 mb-7">
-              Comment ça marche
+        <section className="max-w-[1180px] mx-auto px-4 sm:px-6 py-14 sm:py-[72px]">
+          <div className="text-xs font-bold tracking-[0.09em] uppercase text-[#6b6255]">
+            Démarrage
+          </div>
+          <h2 className="mt-2.5 mb-9 font-['Newsreader',_Georgia,_serif] font-normal text-[30px] sm:text-4xl leading-[1.15] text-[#14294d]">
+            Opérationnel le jour même
+          </h2>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-8">
+            {STEPS.map((step, i) => (
+              <motion.div
+                key={step.title}
+                {...fadeUp}
+                transition={{ duration: 0.3, delay: i * 0.05 }}
+                className={`pt-[18px] border-t-2 ${i === 0 ? 'border-[#2563eb]' : 'border-[#e4ddd2]'}`}
+              >
+                <span
+                  className={`font-['Newsreader',_Georgia,_serif] text-[26px] ${
+                    i === 0 ? 'text-[#2563eb]' : 'text-[#6b6255]'
+                  }`}
+                >
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <h3 className="mt-2.5 mb-1.5 text-[16.5px] font-bold text-[#14294d]">{step.title}</h3>
+                <p className="text-[14.5px] leading-relaxed text-[#5b6472]">{step.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section id="questions" className="bg-white border-t border-[#eee7dd] scroll-mt-20">
+          <div className="max-w-[1180px] mx-auto px-4 sm:px-6 py-14 sm:py-[72px]">
+            <h2 className="mb-9 font-['Newsreader',_Georgia,_serif] font-normal text-[30px] sm:text-4xl leading-[1.15] text-[#14294d]">
+              Questions fréquentes
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
-              {STEPS.map((step, i) => (
-                <motion.div key={step.title} {...fadeUp} transition={{ duration: 0.3, delay: i * 0.05 }}>
-                  <span className="w-[26px] h-[26px] rounded-full bg-blue-600 text-white text-xs font-extrabold flex items-center justify-center">
-                    {i + 1}
-                  </span>
-                  <h3 className="mt-3 mb-1 text-base font-bold text-slate-900">{step.title}</h3>
-                  <p className="text-sm leading-relaxed text-slate-500">{step.description}</p>
-                </motion.div>
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-x-12 gap-y-7">
+              {FAQ.map((item) => (
+                <div key={item.question}>
+                  <h3 className="mb-[7px] text-[15.5px] font-bold text-[#14294d]">{item.question}</h3>
+                  <p className="text-[14.5px] leading-relaxed text-[#5b6472]">{item.answer}</p>
+                </div>
               ))}
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Trial + FAQ */}
-        <div className="bg-slate-50 border-t border-slate-200 px-4 sm:px-6 lg:px-8 py-12 sm:py-14">
-          <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-10">
-            <div className="flex-1">
-              <h2 className="mb-2 text-2xl sm:text-[28px] font-bold tracking-tight text-slate-900">
-                Essayez sans engagement
+        {/* Final CTA */}
+        <section className="bg-[#f1ece4] border-t border-[#e9e3da]">
+          <div className="max-w-[1180px] mx-auto px-4 sm:px-6 py-14 sm:py-[72px] flex flex-wrap items-center justify-between gap-7">
+            <div>
+              <h2 className="mb-2.5 font-['Newsreader',_Georgia,_serif] font-normal text-[28px] sm:text-[38px] leading-[1.12] text-[#14294d] max-w-[520px]">
+                Ouvrez votre cabinet SunuMed aujourd'hui
               </h2>
-              <p className="mb-5 text-[15px] leading-relaxed text-slate-500 max-w-[420px]">
-                30 jours d'essai gratuit avec toutes les fonctionnalités. Pour l'abonnement, notre
-                équipe vous propose une formule adaptée à votre cabinet.
+              <p className="text-[15.5px] leading-relaxed text-[#5b6472] max-w-[480px]">
+                30 jours d'essai, toutes les fonctionnalités, sans carte bancaire.
               </p>
-              <div className="flex flex-wrap gap-3">
-                <a
-                  href="/inscription"
-                  className="inline-flex items-center gap-2 px-5 py-[13px] rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[15px] font-bold transition-colors"
-                >
-                  Créer mon cabinet gratuitement
-                </a>
-                <a
-                  href="mailto:contact@sunumed.sn"
-                  className="inline-flex items-center gap-2 px-5 py-[13px] rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-900 text-[15px] font-semibold transition-colors"
-                >
-                  Contacter l'équipe
-                </a>
-              </div>
             </div>
-            <div className="w-full lg:w-[400px] shrink-0 bg-white border border-slate-200 rounded-2xl p-6">
-              <h3 className="mb-3.5 text-sm font-bold text-slate-900">Questions fréquentes</h3>
-              <div className="flex flex-col gap-3">
-                {FAQ.map((item, i) => (
-                  <div
-                    key={item.question}
-                    className={i < FAQ.length - 1 ? 'pb-3 border-b border-slate-100' : ''}
-                  >
-                    <div className="text-[13px] font-semibold text-slate-900">{item.question}</div>
-                    <div className="text-[13px] leading-relaxed text-slate-500 mt-1">{item.answer}</div>
-                  </div>
-                ))}
-              </div>
+            <div className="flex flex-wrap gap-3">
+              <a
+                href="/inscription"
+                className="inline-flex items-center gap-[9px] px-6 py-[15px] rounded-xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-[15.5px] font-bold transition-colors"
+              >
+                Essayer 30 jours <ArrowRight className="w-[17px] h-[17px]" />
+              </a>
+              <a
+                href="mailto:contact@sunumed.sn"
+                className="inline-flex items-center gap-2 px-[22px] py-[15px] rounded-xl border border-[#d9d1c5] bg-white hover:bg-[#faf8f5] text-[#14294d] text-[15.5px] font-semibold transition-colors"
+              >
+                Contacter l'équipe
+              </a>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Footer */}
-        <footer className="bg-slate-900 px-4 sm:px-6 lg:px-8 py-8">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-5 text-center sm:text-left">
-            <div className="flex flex-col sm:flex-row items-center gap-2.5">
-              <div className="flex items-center gap-2.5">
-                <LogoMark size={28} />
-                <span className="text-sm font-bold text-white">
-                  Sunu<span className="text-blue-400">Med</span>
-                </span>
-              </div>
-              <span className="text-xs text-slate-400">
+        <footer className="bg-[#14294d] px-4 sm:px-6 py-[34px]">
+          <div className="max-w-[1180px] mx-auto flex flex-wrap items-center justify-between gap-[18px]">
+            <div className="flex flex-wrap items-center gap-3">
+              <LogoMark size={26} />
+              <span className="text-[14.5px] font-bold text-white">
+                Sunu<span className="text-[#93b4e8]">Med</span>
+              </span>
+              <span className="text-[12.5px] text-[#93a4c0]">
                 Agenda &amp; gestion médicale pour praticiens indépendants
               </span>
             </div>
-            <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-slate-400">
+            <div className="flex flex-wrap gap-x-5 gap-y-2 text-[12.5px] text-[#93a4c0]">
               <a href="/annuaire" className="hover:text-white">
                 Annuaire
               </a>
