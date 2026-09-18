@@ -199,8 +199,8 @@ export const LandingPage: React.FC = () => {
           <div className="max-w-[1180px] mx-auto px-4 sm:px-6">
             <div className="flex items-center justify-between h-[68px] gap-4">
               <a href="/" className="flex items-center gap-[11px] shrink-0 text-[#14294d]">
-                <LogoMark size={34} />
-                <span className="text-[19px] font-bold tracking-tight text-[#14294d]">
+                <LogoMark size={32} />
+                <span className="text-[22px] font-bold tracking-tight text-[#14294d]">
                   Sunu<span className="text-[#2563eb]">Med</span>
                 </span>
               </a>
@@ -604,8 +604,8 @@ export const LandingPage: React.FC = () => {
         <footer className="bg-[#14294d] px-4 sm:px-6 py-[34px]">
           <div className="max-w-[1180px] mx-auto flex flex-wrap items-center justify-between gap-[18px]">
             <div className="flex flex-wrap items-center gap-3">
-              <LogoMark size={26} />
-              <span className="text-[14.5px] font-bold text-white">
+              <LogoMark size={24} />
+              <span className="text-base font-bold text-white">
                 Sunu<span className="text-[#93b4e8]">Med</span>
               </span>
               <span className="text-[12.5px] text-[#93a4c0]">
