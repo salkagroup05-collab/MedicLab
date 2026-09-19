@@ -6,6 +6,7 @@ import { AuthScreen } from './components/AuthScreen.tsx';
 import { LandingPage } from './components/LandingPage.tsx';
 import { NotFoundPage } from './components/NotFoundPage.tsx';
 import { PublicDirectoryView } from './components/public/PublicDirectoryView.tsx';
+import { ResetPasswordScreen } from './components/ResetPasswordScreen.tsx';
 import { useSession } from './hooks/useSession.ts';
 import './index.css';
 
@@ -18,15 +19,17 @@ function SplashScreen() {
 }
 
 function HomeRoot() {
-  const { session, loading } = useSession();
+  const { session, loading, isRecovery } = useSession();
   if (loading) return <SplashScreen />;
-  return session ? <App session={session} /> : <LandingPage />;
+  if (!session) return <LandingPage />;
+  return isRecovery ? <ResetPasswordScreen /> : <App session={session} />;
 }
 
 function AuthRoot({ mode }: { mode: 'signIn' | 'signUp' }) {
-  const { session, loading } = useSession();
+  const { session, loading, isRecovery } = useSession();
   if (loading) return <SplashScreen />;
-  return session ? <App session={session} /> : <AuthScreen initialMode={mode} />;
+  if (!session) return <AuthScreen initialMode={mode} />;
+  return isRecovery ? <ResetPasswordScreen /> : <App session={session} />;
 }
 
 function Root() {

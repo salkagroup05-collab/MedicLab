@@ -6,6 +6,7 @@ import { getTrialDaysRemaining } from '../utils/subscriptionUtils';
 import { ImportResult } from '../lib/db';
 import { MEDICAL_SPECIALTIES, getProfessionalOrderLabel } from '../constants';
 import { Modal } from './shared/Modal';
+import { PasswordChangeForm } from './PasswordChangeForm';
 
 const SUBSCRIPTION_STATUS_LABELS: Record<DoctorProfile['subscriptionStatus'], string> = {
   trialing: "Essai gratuit en cours",
@@ -434,6 +435,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </button>
             </div>
           </form>
+
+          {/* Sécurité du compte */}
+          <div className="pt-4 border-t border-slate-200 space-y-3">
+            <span className="font-bold text-slate-800 uppercase tracking-wider block">
+              Changer mon mot de passe
+            </span>
+            <PasswordChangeForm requireCurrentPassword compact submitLabel="Mettre à jour le mot de passe" />
+          </div>
 
           {/* Abonnement (lecture seule, géré manuellement) */}
           <div className="pt-4 border-t border-slate-200 space-y-3">

@@ -19,16 +19,9 @@ import { AnimatePresence, motion, MotionConfig } from 'motion/react';
 import { supabase } from '../lib/supabaseClient';
 import { LogoMark } from './Logo';
 import { MEDICAL_SPECIALTIES } from '../constants';
+import { MIN_PASSWORD_LENGTH, getPasswordErrorMessage, getPasswordStrength } from '../utils/passwordUtils';
 
 type Mode = 'signIn' | 'signUp' | 'forgotPassword';
-
-const getPasswordStrength = (password: string): number => {
-  if (password.length < 6) return 0;
-  let score = 1;
-  if (password.length >= 10) score += 1;
-  if (/\d/.test(password) && /[a-zA-Z]/.test(password)) score += 1;
-  return Math.min(score, 3);
-};
 
 interface AuthScreenProps {
   initialMode?: Mode;
@@ -81,7 +74,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'signIn' }
     });
     setLoading(false);
     if (signUpError) {
-      setError(signUpError.message);
+      setError(getPasswordErrorMessage(signUpError));
       return;
     }
     setInfoMessage(
@@ -181,7 +174,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'signIn' }
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
-                minLength={6}
+                autoComplete="current-password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -367,8 +360,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'signIn' }
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
-                minLength={6}
-                placeholder="••••••••"
+                minLength={MIN_PASSWORD_LENGTH}
+                autoComplete="new-password"
+                placeholder="••••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full pl-9 pr-10 py-2.5 text-sm border border-slate-300 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -392,7 +386,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'signIn' }
                 />
               ))}
               <span className="text-[11px] font-semibold text-slate-500 ml-1 whitespace-nowrap">
-                6 caractères minimum
+                {MIN_PASSWORD_LENGTH} caractères minimum
               </span>
             </div>
           </div>
