@@ -12,6 +12,7 @@ import { DoctorProfile, Medication, Patient, Prescription } from '../types';
 import { calculateAge, formatDateFr, getTodayDateString } from '../utils/dateUtils';
 import { Modal } from './shared/Modal';
 import { getProfessionalOrderLabel } from '../constants';
+import { logPatientAccess } from '../lib/db';
 
 interface PrescriptionModalProps {
   isOpen: boolean;
@@ -113,6 +114,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
   };
 
   const handlePrint = () => {
+    logPatientAccess(patient.id, 'export', 'ordonnance_impression');
     window.print();
   };
 

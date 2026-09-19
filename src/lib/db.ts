@@ -740,3 +740,73 @@ export async function loadPublicPractitioners(): Promise<PublicPractitioner[]> {
   if (error) throw error;
   return ((data ?? []) as PublicPractitionerRow[]).map(rowToPublicPractitioner);
 }
+
+// ---------------------------------------------------------------------------
+// Journal d'accès (0012_limits_and_access_log.sql)
+// ---------------------------------------------------------------------------
+// Créations, modifications et suppressions sont journalisées par des triggers
+// en base. Les lectures n'en déclenchent pas : l'app signale elle-même
+// l'ouverture d'un dossier et les exports.
+
+export type PatientAccessAction = 'view' | 'export';
+
+// Même dossier réaffiché plusieurs fois de suite (changement d'onglet, retour
+// sur la fiche) : une seule entrée toutes les 5 minutes.
+const VIEW_LOG_INTERVAL_MS = 5 * 60 * 1000;
+const lastViewLoggedAt = new Map<string, number>();
+
+// Journalisation "au mieux" : un échec ne doit jamais bloquer le soin.
+export function logPatientAccess(patientId: string, action: PatientAccessAction, document?: string): void {
+  if (action === 'view') {
+    const now = Date.now();
+    const last = lastViewLoggedAt.get(patientId);
+    if (last !== undefined && now - last < VIEW_LOG_INTERVAL_MS) return;
+    lastViewLoggedAt.set(patientId, now);
+  }
+  supabase
+    .rpc('log_patient_access', {
+      p_patient_id: patientId,
+      p_action: action,
+      p_details: document ? { document } : null,
+    })
+    .then(({ error }) => {
+      if (error) console.error('Failed to log patient access:', error);
+    });
+}
+
+export interface AccessLogEntry {
+  occurredAt: string;
+  action: 'insert' | 'update' | 'delete' | 'view' | 'export' | 'replace';
+  entity: 'patient' | 'appointment' | 'prescription' | 'consultation' | 'cabinet';
+  recordId: string | null;
+  patientId: string | null;
+  patientName: string | null;
+  details: Record<string, unknown> | null;
+  byDashboard: boolean;
+}
+
+interface AccessLogRow {
+  occurred_at: string;
+  action: AccessLogEntry['action'];
+  entity: AccessLogEntry['entity'];
+  record_id: string | null;
+  patient_id: string | null;
+  patient_name: string | null;
+  details: Record<string, unknown> | null;
+  by_dashboard: boolean;
+}
+
+export async function loadAccessLog(limit = 100): Promise<AccessLogEntry[]> {
+  const { data, error } = await supabase.rpc('list_access_log', { p_limit: limit });
+  if (error) throw error;
+  return ((data ?? []) as AccessLogRow[]).map((row) => ({
+    occurredAt: row.occurred_at,
+    action: row.action,
+    entity: row.entity,
+    recordId: row.record_id,
+    patientId: row.patient_id,
+    patientName: row.patient_name,
+    details: row.details,
+    byDashboard: row.by_dashboard,
+  }));
+}

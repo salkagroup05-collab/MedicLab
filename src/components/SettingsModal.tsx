@@ -8,6 +8,7 @@ import { MEDICAL_SPECIALTIES, getProfessionalOrderLabel } from '../constants';
 import { Modal } from './shared/Modal';
 import { PasswordChangeForm } from './PasswordChangeForm';
 import { DestructiveConfirmPanel } from './DestructiveConfirmPanel';
+import { AccessLogSection } from './AccessLogSection';
 
 const SUBSCRIPTION_STATUS_LABELS: Record<DoctorProfile['subscriptionStatus'], string> = {
   trialing: "Essai gratuit en cours",
@@ -498,6 +499,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </span>
             <PasswordChangeForm requireCurrentPassword compact submitLabel="Mettre à jour le mot de passe" />
           </div>
+
+          <AccessLogSection />
 
           {/* Abonnement (lecture seule, géré manuellement) */}
           <div className="pt-4 border-t border-slate-200 space-y-3">

@@ -32,6 +32,7 @@ import {
   getTodayDateString,
 } from '../utils/dateUtils';
 import { downloadReferralLetterPdf } from '../utils/pdfExport';
+import { logPatientAccess } from '../lib/db';
 import { Modal } from './shared/Modal';
 
 interface SpecialtyPreset {
@@ -411,6 +412,7 @@ export const ReferralLetterModal: React.FC<ReferralLetterModalProps> = ({
         activeConsultation || undefined,
         prescriptions
       );
+      logPatientAccess(patient.id, 'export', 'lettre_orientation_pdf');
     } catch (err) {
       console.error('Erreur téléchargement lettre orientation:', err);
       alert('Une erreur est survenue lors de la génération du PDF.');
@@ -420,6 +422,7 @@ export const ReferralLetterModal: React.FC<ReferralLetterModalProps> = ({
   };
 
   const handlePrint = () => {
+    logPatientAccess(patient.id, 'export', 'lettre_orientation_impression');
     window.print();
   };
 

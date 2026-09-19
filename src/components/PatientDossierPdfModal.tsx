@@ -14,6 +14,7 @@ import {
 import { Appointment, DoctorProfile, Patient, Consultation, Prescription } from '../types';
 import { calculateAge, formatDateFr, formatDateShortFr, formatTimeFr, getTodayDateString } from '../utils/dateUtils';
 import { downloadPatientDossierPdf, PdfExportOptions } from '../utils/pdfExport';
+import { logPatientAccess } from '../lib/db';
 import { formatFCFA } from '../utils/currencyUtils';
 import { Modal } from './shared/Modal';
 
@@ -55,6 +56,7 @@ export const PatientDossierPdfModal: React.FC<PatientDossierPdfModalProps> = ({
     setIsExporting(true);
     try {
       downloadPatientDossierPdf(patient, doctor, consultations, prescriptions, appointments, options);
+      logPatientAccess(patient.id, 'export', 'dossier_pdf');
       setExportSuccess(true);
       setTimeout(() => setExportSuccess(false), 3500);
     } catch (err) {
@@ -66,6 +68,7 @@ export const PatientDossierPdfModal: React.FC<PatientDossierPdfModalProps> = ({
   };
 
   const handlePrint = () => {
+    logPatientAccess(patient.id, 'export', 'dossier_impression');
     window.print();
   };
 

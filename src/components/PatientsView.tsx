@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Search,
   UserPlus,
@@ -26,6 +26,7 @@ import {
 } from '../types';
 import { calculateAge, formatDateFr, formatDateShortFr, formatTimeFr } from '../utils/dateUtils';
 import { sanitizePhoneNumber } from '../utils/whatsappUtils';
+import { logPatientAccess } from '../lib/db';
 import { PatientDossierPdfModal } from './PatientDossierPdfModal';
 import { PatientAppointmentsTable } from './PatientAppointmentsTable';
 import { ReferralLetterModal } from './ReferralLetterModal';
@@ -86,6 +87,12 @@ export const PatientsView: React.FC<PatientsViewProps> = ({
 
   // Current active patient to display in the right panel
   const activePatient = selectedPatient || (patients.length > 0 ? patients[0] : null);
+  const activePatientId = activePatient?.id;
+
+  // Journal d'accès : un dossier affiché compte comme consulté.
+  useEffect(() => {
+    if (activePatientId) logPatientAccess(activePatientId, 'view');
+  }, [activePatientId]);
 
   // Data for active patient
   const patientAppointments = activePatient
