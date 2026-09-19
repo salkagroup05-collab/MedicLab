@@ -1,6 +1,6 @@
 import { DoctorProfile } from '../types';
 
-// Même logique que la fonction SQL has_active_subscription() côté base :
+// Même logique que la fonction SQL private.has_active_subscription() côté base :
 // actif, ou en essai non expiré.
 export function hasActiveSubscription(doctor: DoctorProfile): boolean {
   if (doctor.subscriptionStatus === 'active') return true;
