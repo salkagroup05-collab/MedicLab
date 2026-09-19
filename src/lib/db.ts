@@ -352,18 +352,21 @@ export async function loadPrescriptions(practitionerId: string): Promise<Prescri
   return ((data ?? []) as PrescriptionRow[]).map(rowToPrescription);
 }
 
-export async function createPrescription(
-  practitionerId: string,
-  presc: Partial<Prescription>
-): Promise<Prescription> {
-  const row = {
-    practitioner_id: practitionerId,
+function prescriptionToRow(presc: Partial<Prescription>): Record<string, unknown> {
+  return {
     patient_id: presc.patientId,
     appointment_id: presc.appointmentId ?? null,
     date: presc.date,
     medications: presc.medications ?? [],
     recommendations: presc.recommendations ?? null,
   };
+}
+
+export async function createPrescription(
+  practitionerId: string,
+  presc: Partial<Prescription>
+): Promise<Prescription> {
+  const row = { ...prescriptionToRow(presc), practitioner_id: practitionerId };
   const { data, error } = await supabase.from('prescriptions').insert(row).select().single();
   if (error) throw error;
   return rowToPrescription(data as PrescriptionRow);
@@ -428,13 +431,9 @@ export async function loadConsultations(practitionerId: string): Promise<Consult
   return ((data ?? []) as ConsultationRow[]).map(rowToConsultation);
 }
 
-export async function upsertConsultation(
-  practitionerId: string,
-  consultation: Consultation
-): Promise<Consultation> {
+function consultationToRow(consultation: Consultation): Record<string, unknown> {
   const vitals = consultation.vitals;
-  const row = {
-    practitioner_id: practitionerId,
+  return {
     appointment_id: consultation.appointmentId,
     patient_id: consultation.patientId,
     date: consultation.date,
@@ -452,6 +451,13 @@ export async function upsertConsultation(
     prescription_id: consultation.prescriptionId ?? null,
     notes: consultation.notes ?? null,
   };
+}
+
+export async function upsertConsultation(
+  practitionerId: string,
+  consultation: Consultation
+): Promise<Consultation> {
+  const row = { ...consultationToRow(consultation), practitioner_id: practitionerId };
   const { data, error } = await supabase
     .from('consultations')
     .upsert(row, { onConflict: 'appointment_id' })
@@ -485,14 +491,6 @@ export async function exportCabinetData(practitionerId: string): Promise<string>
   return JSON.stringify(data, null, 2);
 }
 
-async function deleteAllCabinetData(practitionerId: string): Promise<void> {
-  const tables = ['consultations', 'prescriptions', 'appointments', 'patients'] as const;
-  for (const table of tables) {
-    const { error } = await supabase.from(table).delete().eq('practitioner_id', practitionerId);
-    if (error) throw error;
-  }
-}
-
 interface CabinetSnapshot {
   patients: Patient[];
   appointments: Appointment[];
@@ -500,68 +498,35 @@ interface CabinetSnapshot {
   consultations: Consultation[];
 }
 
-// Réinsère un instantané de cabinet (démo ou import JSON) avec des ids serveur frais,
-// en respectant l'ordre des dépendances FK et en reliant chaque entité importée à ses
-// parents via une table de correspondance ancien-id -> nouveau-id.
-async function bulkInsertSnapshot(
-  practitionerId: string,
-  snapshot: CabinetSnapshot
-): Promise<CabinetSnapshot> {
-  const patientIdMap = new Map<string, string>();
-  const appointmentIdMap = new Map<string, string>();
-  const prescriptionIdMap = new Map<string, string>();
+type CabinetCounts = ImportResult['imported'];
 
-  const insertedPatients: Patient[] = [];
-  for (const patient of snapshot.patients) {
-    const created = await createPatient(practitionerId, patient);
-    patientIdMap.set(patient.id, created.id);
-    insertedPatients.push(created);
-  }
-
-  const insertedAppointments: Appointment[] = [];
-  for (const apt of snapshot.appointments) {
-    const newPatientId = patientIdMap.get(apt.patientId);
-    if (!newPatientId) continue;
-    const created = await createAppointment(practitionerId, { ...apt, patientId: newPatientId });
-    appointmentIdMap.set(apt.id, created.id);
-    insertedAppointments.push(created);
-  }
-
-  const insertedPrescriptions: Prescription[] = [];
-  for (const presc of snapshot.prescriptions) {
-    const newPatientId = patientIdMap.get(presc.patientId);
-    if (!newPatientId) continue;
-    const newAppointmentId = presc.appointmentId ? appointmentIdMap.get(presc.appointmentId) : undefined;
-    const created = await createPrescription(practitionerId, {
-      ...presc,
-      patientId: newPatientId,
-      appointmentId: newAppointmentId,
-    });
-    prescriptionIdMap.set(presc.id, created.id);
-    insertedPrescriptions.push(created);
-  }
-
-  const insertedConsultations: Consultation[] = [];
-  for (const cons of snapshot.consultations) {
-    const newPatientId = patientIdMap.get(cons.patientId);
-    const newAppointmentId = appointmentIdMap.get(cons.appointmentId);
-    if (!newPatientId || !newAppointmentId) continue;
-    const newPrescriptionId = cons.prescriptionId ? prescriptionIdMap.get(cons.prescriptionId) : undefined;
-    const created = await upsertConsultation(practitionerId, {
-      ...cons,
-      patientId: newPatientId,
-      appointmentId: newAppointmentId,
-      prescriptionId: newPrescriptionId,
-    });
-    insertedConsultations.push(created);
-  }
-
+// Remplace tout le cabinet (démo ou import JSON) en un seul appel RPC, donc une
+// seule transaction : si une ligne échoue, Postgres annule tout et les données
+// d'origine restent intactes (voir 0011_replace_cabinet_data.sql).
+// Chaque ligne garde son id d'origine ; la fonction attribue de nouveaux UUID et
+// réécrit les références entre entités. Les lignes dont le parent est absent
+// sont ignorées.
+export function buildReplaceCabinetParams(snapshot: CabinetSnapshot, doctorRow: Record<string, unknown> | null) {
   return {
-    patients: insertedPatients,
-    appointments: insertedAppointments,
-    prescriptions: insertedPrescriptions,
-    consultations: insertedConsultations,
+    p_patients: snapshot.patients.map((p) => ({ ...patientToRow(p), id: p.id })),
+    p_appointments: snapshot.appointments.map((a) => ({ ...appointmentToRow(a), id: a.id })),
+    p_prescriptions: snapshot.prescriptions.map((p) => ({
+      ...prescriptionToRow(p),
+      id: p.id,
+      created_at: p.createdAt ?? null,
+    })),
+    p_consultations: snapshot.consultations.map((c) => ({ ...consultationToRow(c), id: c.id })),
+    p_doctor: doctorRow,
   };
+}
+
+async function replaceCabinetData(
+  snapshot: CabinetSnapshot,
+  doctorRow: Record<string, unknown> | null
+): Promise<CabinetCounts> {
+  const { data, error } = await supabase.rpc('replace_cabinet_data', buildReplaceCabinetParams(snapshot, doctorRow));
+  if (error) throw error;
+  return data as CabinetCounts;
 }
 
 export interface ImportResult {
@@ -668,27 +633,30 @@ export async function importCabinetData(practitionerId: string, jsonString: stri
       errors.push(`${rawConsultations.length - validConsultations.length} consultation(s) invalide(s) ignorée(s).`);
     }
 
-    await deleteAllCabinetData(practitionerId);
-    const inserted = await bulkInsertSnapshot(practitionerId, {
-      patients: validPatients,
-      appointments: validAppointments,
-      prescriptions: validPrescriptions,
-      consultations: validConsultations,
-    });
+    const doctorRow =
+      raw.doctor && typeof raw.doctor === 'object' ? doctorProfileToRow(raw.doctor as Partial<DoctorProfile>) : null;
 
-    if (raw.doctor && typeof raw.doctor === 'object') {
-      await updateDoctorProfile(practitionerId, raw.doctor as Partial<DoctorProfile>);
-    }
+    const counts = await replaceCabinetData(
+      {
+        patients: validPatients,
+        appointments: validAppointments,
+        prescriptions: validPrescriptions,
+        consultations: validConsultations,
+      },
+      doctorRow
+    );
 
-    imported.patients = inserted.patients.length;
-    imported.appointments = inserted.appointments.length;
-    imported.prescriptions = inserted.prescriptions.length;
-    imported.consultations = inserted.consultations.length;
-
-    return { success: true, errors, imported };
+    return { success: true, errors, imported: counts };
   } catch (err) {
     console.error('Failed to import cabinet data:', err);
-    return { success: false, errors: ["Erreur inattendue lors de l'import des données."], imported };
+    const detail = (err as { message?: string } | null)?.message;
+    return {
+      success: false,
+      errors: [
+        `Import annulé, aucune donnée n'a été modifiée.${detail ? ` Détail technique : ${detail}` : ''}`,
+      ],
+      imported,
+    };
   }
 }
 
@@ -699,17 +667,14 @@ export async function resetToDemoData(practitionerId: string): Promise<{
   prescriptions: Prescription[];
   consultations: Consultation[];
 }> {
-  await deleteAllCabinetData(practitionerId);
-  const { patients, appointments, prescriptions, consultations } = await bulkInsertSnapshot(practitionerId, {
-    patients: initialPatients,
-    appointments: getInitialAppointments(),
-    prescriptions: initialPrescriptions,
-    consultations: initialConsultations,
-  });
-
-  const { data, error } = await supabase
-    .from('practitioners')
-    .update({
+  await replaceCabinetData(
+    {
+      patients: initialPatients,
+      appointments: getInitialAppointments(),
+      prescriptions: initialPrescriptions,
+      consultations: initialConsultations,
+    },
+    {
       name: initialDoctorProfile.name,
       title: initialDoctorProfile.title,
       specialty: initialDoctorProfile.specialty,
@@ -727,13 +692,17 @@ export async function resetToDemoData(practitionerId: string): Promise<{
       is_public_listed: initialDoctorProfile.isPublicListed,
       public_bio: initialDoctorProfile.publicBio,
       accepts_new_patients: initialDoctorProfile.acceptsNewPatients,
-    })
-    .eq('id', practitionerId)
-    .select()
-    .single();
-  if (error) throw error;
+    }
+  );
 
-  return { doctor: rowToDoctorProfile(data as PractitionerRow), patients, appointments, prescriptions, consultations };
+  const [doctor, patients, appointments, prescriptions, consultations] = await Promise.all([
+    loadDoctorProfile(practitionerId),
+    loadPatients(practitionerId),
+    loadAppointments(practitionerId),
+    loadPrescriptions(practitionerId),
+    loadConsultations(practitionerId),
+  ]);
+  return { doctor, patients, appointments, prescriptions, consultations };
 }
 
 // ---------------------------------------------------------------------------
