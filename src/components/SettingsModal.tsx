@@ -7,6 +7,7 @@ import { ImportResult } from '../lib/db';
 import { MEDICAL_SPECIALTIES, getProfessionalOrderLabel } from '../constants';
 import { Modal } from './shared/Modal';
 import { PasswordChangeForm } from './PasswordChangeForm';
+import { DestructiveConfirmPanel } from './DestructiveConfirmPanel';
 
 const SUBSCRIPTION_STATUS_LABELS: Record<DoctorProfile['subscriptionStatus'], string> = {
   trialing: "Essai gratuit en cours",
@@ -22,9 +23,11 @@ interface SettingsModalProps {
   onSaveDoctor: (profile: DoctorProfile) => void;
   onExportData: () => Promise<void>;
   onImportData: (jsonString: string) => Promise<ImportResult>;
-  onResetDemo: () => Promise<void>;
+  onResetDemo: () => Promise<boolean>;
   onSignOut: () => void;
 }
+
+type PendingDestructiveAction = { kind: 'reset' } | { kind: 'import'; content: string; fileName: string };
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
@@ -59,6 +62,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [publicBio, setPublicBio] = useState(doctor.publicBio);
 
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // Import et réinitialisation effacent tout le cabinet : on passe par une
+  // confirmation où il faut taper le mot SUPPRIMER.
+  const [pendingAction, setPendingAction] = useState<PendingDestructiveAction | null>(null);
+  const [isRunningDestructive, setIsRunningDestructive] = useState(false);
+  const [destructiveError, setDestructiveError] = useState<string | null>(null);
+
+  // Fermer les paramètres abandonne l'opération en attente (et le contenu du
+  // fichier choisi) : elle ne doit pas réapparaître à la réouverture.
+  const [wasOpen, setWasOpen] = useState(isOpen);
+  if (wasOpen !== isOpen) {
+    setWasOpen(isOpen);
+    if (!isOpen && !isRunningDestructive) {
+      setPendingAction(null);
+      setDestructiveError(null);
+    }
+  }
 
   if (!isOpen) return null;
 
@@ -101,25 +121,60 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const input = e.target;
+    const file = input.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = async (event) => {
+    reader.onload = (event) => {
       const content = event.target?.result as string;
       if (content) {
-        const result = await onImportData(content);
-        if (result.success) {
-          const summary = `Données restaurées : ${result.imported.patients} patient(s), ${result.imported.appointments} rendez-vous, ${result.imported.prescriptions} ordonnance(s), ${result.imported.consultations} consultation(s).`;
-          const warning = result.errors.length > 0 ? `\n\nAttention :\n- ${result.errors.join('\n- ')}` : '';
-          alert(`${summary}${warning}`);
-          onClose();
-        } else {
-          alert(`Erreur lors de l'import :\n- ${result.errors.join('\n- ')}`);
-        }
+        setDestructiveError(null);
+        setPendingAction({ kind: 'import', content, fileName: file.name });
       }
+      // Permet de resélectionner le même fichier après une annulation.
+      input.value = '';
     };
     reader.readAsText(file);
+  };
+
+  const cancelDestructiveAction = () => {
+    setPendingAction(null);
+    setDestructiveError(null);
+  };
+
+  const confirmDestructiveAction = async () => {
+    if (!pendingAction) return;
+    setDestructiveError(null);
+    setIsRunningDestructive(true);
+    try {
+      if (pendingAction.kind === 'reset') {
+        const ok = await onResetDemo();
+        if (!ok) {
+          setDestructiveError(
+            'La réinitialisation a échoué. Vos données actuelles ont été téléchargées dans un fichier de sauvegarde.'
+          );
+          return;
+        }
+        setPendingAction(null);
+        alert('Données de démonstration réinitialisées.');
+        onClose();
+        return;
+      }
+
+      const result = await onImportData(pendingAction.content);
+      if (!result.success) {
+        setDestructiveError(`Erreur lors de l'import : ${result.errors.join(' ')}`);
+        return;
+      }
+      setPendingAction(null);
+      const summary = `Données restaurées : ${result.imported.patients} patient(s), ${result.imported.appointments} rendez-vous, ${result.imported.prescriptions} ordonnance(s), ${result.imported.consultations} consultation(s).`;
+      const warning = result.errors.length > 0 ? `\n\nAttention :\n- ${result.errors.join('\n- ')}` : '';
+      alert(`${summary}${warning}`);
+      onClose();
+    } finally {
+      setIsRunningDestructive(false);
+    }
   };
 
   return (
@@ -506,6 +561,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <input
                   type="file"
                   accept=".json"
+                  disabled={isRunningDestructive}
                   onChange={handleFileUpload}
                   className="hidden"
                 />
@@ -514,16 +570,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               {/* Reset to Demo */}
               <button
                 type="button"
-                onClick={async () => {
-                  if (
-                    confirm(
-                      'Êtes-vous certain de vouloir réinitialiser l\'application avec les données médicales de démonstration ? Toutes vos données réelles (patients, rendez-vous, ordonnances, consultations) seront définitivement supprimées.'
-                    )
-                  ) {
-                    await onResetDemo();
-                    alert('Données de démonstration réinitialisées.');
-                    onClose();
-                  }
+                disabled={isRunningDestructive}
+                onClick={() => {
+                  setDestructiveError(null);
+                  setPendingAction({ kind: 'reset' });
                 }}
                 className="p-3 bg-rose-50/50 hover:bg-rose-50 border border-rose-200 rounded-xl text-left flex flex-col justify-between transition-colors cursor-pointer"
               >
@@ -536,6 +586,37 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </p>
               </button>
             </div>
+
+            {pendingAction && (
+              <DestructiveConfirmPanel
+                // Nouvelle action = champ de confirmation vidé.
+                key={pendingAction.kind === 'import' ? `import:${pendingAction.fileName}` : 'reset'}
+                title={
+                  pendingAction.kind === 'reset'
+                    ? 'Remplacer vos données par la démonstration ?'
+                    : `Restaurer « ${pendingAction.fileName} » ?`
+                }
+                description={
+                  pendingAction.kind === 'reset' ? (
+                    <>
+                      Tous vos patients, rendez-vous, ordonnances et consultations seront{' '}
+                      <strong>définitivement supprimés</strong> et remplacés par des données fictives. Votre profil
+                      reviendra aussi aux valeurs de démonstration.
+                    </>
+                  ) : (
+                    <>
+                      Tous vos patients, rendez-vous, ordonnances et consultations actuels seront{' '}
+                      <strong>définitivement supprimés</strong> puis remplacés par le contenu de ce fichier.
+                    </>
+                  )
+                }
+                confirmLabel={pendingAction.kind === 'reset' ? 'Réinitialiser' : 'Restaurer'}
+                isRunning={isRunningDestructive}
+                error={destructiveError}
+                onConfirm={confirmDestructiveAction}
+                onCancel={cancelDestructiveAction}
+              />
+            )}
           </div>
         </div>
 

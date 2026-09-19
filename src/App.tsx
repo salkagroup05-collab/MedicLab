@@ -442,43 +442,91 @@ export default function App({ session }: AppProps) {
   };
 
   // Storage Handlers
+
+  // Télécharge une copie JSON complète du cabinet. Lève une erreur en cas d'échec.
+  const downloadCabinetBackup = async (fileLabel: string) => {
+    const dataStr = await exportCabinetData(practitionerId);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${fileLabel}.json`;
+    link.click();
+    // Révocation différée : certains navigateurs annulent le téléchargement si
+    // l'URL disparaît dans la foulée du clic.
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  };
+
+  // Horodatage dans le nom de fichier, pour qu'une sauvegarde automatique
+  // n'écrase pas celle faite plus tôt le même jour.
+  const backupTimestamp = () => {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    return `${today}_${hh}h${mm}`;
+  };
+
+  const reloadCabinetData = async () => {
+    const [doctorData, patientsData, appointmentsData, prescriptionsData, consultationsData] = await Promise.all([
+      loadDoctorProfile(practitionerId),
+      loadPatients(practitionerId),
+      loadAppointments(practitionerId),
+      loadPrescriptions(practitionerId),
+      loadConsultations(practitionerId),
+    ]);
+    setDoctor(doctorData);
+    setPatients(patientsData);
+    setAppointments(appointmentsData);
+    setPrescriptions(prescriptionsData);
+    setConsultations(consultationsData);
+  };
+
   const handleExportData = async () => {
     try {
-      const dataStr = await exportCabinetData(practitionerId);
-      const blob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `sauvegarde_cabinet_${today}.json`;
-      link.click();
-      URL.revokeObjectURL(url);
+      await downloadCabinetBackup(`sauvegarde_cabinet_${today}`);
     } catch (err) {
       console.error('Failed to export data:', err);
       showError("Erreur lors de l'export des données.");
     }
   };
 
+  // Import et réinitialisation commencent par effacer toutes les données du
+  // cabinet, puis réinsèrent ligne par ligne : une coupure réseau au milieu
+  // ferait perdre des dossiers. On télécharge donc toujours une sauvegarde
+  // d'abord, et on n'efface rien si elle échoue.
   const handleImportData = async (jsonString: string): Promise<ImportResult> => {
+    try {
+      await downloadCabinetBackup(`sauvegarde_avant_import_${backupTimestamp()}`);
+    } catch (err) {
+      console.error('Failed to back up before import:', err);
+      return {
+        success: false,
+        errors: ["La sauvegarde préalable a échoué : import annulé, aucune donnée n'a été modifiée."],
+        imported: { patients: 0, appointments: 0, prescriptions: 0, consultations: 0 },
+      };
+    }
+
     const result = await importCabinetData(practitionerId, jsonString);
-    if (result.success) {
-      const [doctorData, patientsData, appointmentsData, prescriptionsData, consultationsData] =
-        await Promise.all([
-          loadDoctorProfile(practitionerId),
-          loadPatients(practitionerId),
-          loadAppointments(practitionerId),
-          loadPrescriptions(practitionerId),
-          loadConsultations(practitionerId),
-        ]);
-      setDoctor(doctorData);
-      setPatients(patientsData);
-      setAppointments(appointmentsData);
-      setPrescriptions(prescriptionsData);
-      setConsultations(consultationsData);
+    // Même en cas d'échec, les données ont pu être en partie effacées : on
+    // réaffiche l'état réel de la base plutôt que l'ancien état en mémoire.
+    try {
+      await reloadCabinetData();
+    } catch (err) {
+      console.error('Failed to reload cabinet data after import:', err);
+      showError('Erreur lors du rechargement des données du cabinet.');
     }
     return result;
   };
 
-  const handleResetDemo = async () => {
+  const handleResetDemo = async (): Promise<boolean> => {
+    try {
+      await downloadCabinetBackup(`sauvegarde_avant_reinitialisation_${backupTimestamp()}`);
+    } catch (err) {
+      console.error('Failed to back up before reset:', err);
+      showError("La sauvegarde préalable a échoué : réinitialisation annulée, aucune donnée n'a été modifiée.");
+      return false;
+    }
+
     try {
       const data = await resetToDemoData(practitionerId);
       setDoctor(data.doctor);
@@ -486,9 +534,14 @@ export default function App({ session }: AppProps) {
       setAppointments(data.appointments);
       setPrescriptions(data.prescriptions);
       setConsultations(data.consultations);
+      return true;
     } catch (err) {
       console.error('Failed to reset demo data:', err);
       showError('Erreur lors de la réinitialisation des données de démonstration.');
+      await reloadCabinetData().catch((reloadErr) =>
+        console.error('Failed to reload cabinet data after reset:', reloadErr)
+      );
+      return false;
     }
   };
 
