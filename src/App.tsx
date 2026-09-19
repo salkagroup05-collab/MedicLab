@@ -49,6 +49,8 @@ import { SettingsModal } from './components/SettingsModal';
 import { SubscriptionRequiredScreen } from './components/SubscriptionRequiredScreen';
 import { WhatsAppReminderModal } from './components/WhatsAppReminderModal';
 import { getApproachingAppointmentsData } from './utils/whatsappUtils';
+import { useIdleSignOut } from './hooks/useIdleSignOut';
+import { IdleWarning } from './components/IdleWarning';
 import { Clock, Loader2 } from 'lucide-react';
 
 interface AppProps {
@@ -57,6 +59,7 @@ interface AppProps {
 
 export default function App({ session }: AppProps) {
   const practitionerId = session.user.id;
+  const { secondsLeft: idleSecondsLeft, stayConnected } = useIdleSignOut();
 
   // Main data state
   const [doctor, setDoctor] = useState<DoctorProfile | null>(null);
@@ -714,6 +717,8 @@ export default function App({ session }: AppProps) {
         onSaveDoctorProfile={handleSaveDoctor}
         initialSelectedAppointmentId={whatsAppInitialAppointmentId}
       />
+
+      {idleSecondsLeft !== null && <IdleWarning secondsLeft={idleSecondsLeft} onStayConnected={stayConnected} />}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import React from 'react';
 import { LogOut, ShieldCheck } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { endPasswordRecovery } from '../lib/passwordRecovery';
+import { markFreshSignIn } from '../hooks/useIdleSignOut';
 import { LogoMark } from './Logo';
 import { PasswordChangeForm } from './PasswordChangeForm';
 
@@ -9,6 +10,13 @@ import { PasswordChangeForm } from './PasswordChangeForm';
 // oublié" : le praticien doit choisir un nouveau mot de passe avant d'accéder
 // à son cabinet.
 export const ResetPasswordScreen: React.FC = () => {
+  const handleSuccess = () => {
+    // Le délai d'inactivité repart de l'accès effectif au cabinet, pas de
+    // l'ouverture du lien.
+    markFreshSignIn();
+    endPasswordRecovery();
+  };
+
   const handleCancel = async () => {
     await supabase.auth.signOut();
     endPasswordRecovery();
@@ -47,7 +55,7 @@ export const ResetPasswordScreen: React.FC = () => {
             votre cabinet.
           </p>
 
-          <PasswordChangeForm submitLabel="Enregistrer et accéder au cabinet" onSuccess={endPasswordRecovery} />
+          <PasswordChangeForm submitLabel="Enregistrer et accéder au cabinet" onSuccess={handleSuccess} />
 
           <div className="mt-7 pt-5 border-t border-slate-100 text-center">
             <button

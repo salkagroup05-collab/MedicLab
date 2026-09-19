@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   AlertCircle,
   ArrowLeft,
@@ -19,6 +19,7 @@ import { AnimatePresence, motion, MotionConfig } from 'motion/react';
 import { supabase } from '../lib/supabaseClient';
 import { LogoMark } from './Logo';
 import { MEDICAL_SPECIALTIES } from '../constants';
+import { markFreshSignIn } from '../hooks/useIdleSignOut';
 import { MIN_PASSWORD_LENGTH, getPasswordErrorMessage, getPasswordStrength } from '../utils/passwordUtils';
 
 type Mode = 'signIn' | 'signUp' | 'forgotPassword';
@@ -36,7 +37,16 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'signIn' }
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [infoMessage, setInfoMessage] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(() =>
+    new URLSearchParams(window.location.search).get('raison') === 'inactivite'
+      ? 'Vous avez été déconnecté après 30 minutes d\'inactivité. Reconnectez-vous pour continuer.'
+      : null
+  );
+
+  // Retire ?raison=inactivite de l'URL, pour que le message ne revienne pas au rechargement.
+  useEffect(() => {
+    if (window.location.search) window.history.replaceState(null, '', window.location.pathname);
+  }, []);
 
   const resetFeedback = () => {
     setError(null);
@@ -52,6 +62,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'signIn' }
     e.preventDefault();
     resetFeedback();
     setLoading(true);
+    // Avant l'appel : la session déclenche le montage de l'app, qui lit cette
+    // valeur, parfois avant que la promesse ci-dessous ne se résolve.
+    markFreshSignIn();
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (signInError) {
@@ -67,6 +80,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'signIn' }
     e.preventDefault();
     resetFeedback();
     setLoading(true);
+    // Sans confirmation d'email, l'inscription ouvre directement une session.
+    markFreshSignIn();
     const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
