@@ -29,9 +29,13 @@ export const StatsView: React.FC<StatsViewProps> = ({
   const cancelledApts = appointments.filter((a) => a.status === 'cancelled');
   const noShowApts = appointments.filter((a) => a.status === 'no_show');
 
-  // Attendance rate
-  const attendanceRate = totalAppointments > 0
-    ? Math.round(((completedApts.length) / (totalAppointments - cancelledApts.length || 1)) * 100)
+  // Taux de présence : seuls les RDV déjà passés (jusqu'à aujourd'hui) et non
+  // annulés comptent ; un RDV futur n'est ni honoré ni manqué.
+  const attendanceBase = appointments.filter(
+    (a) => a.date <= today && a.status !== 'cancelled'
+  ).length;
+  const attendanceRate = attendanceBase > 0
+    ? Math.round((completedApts.filter((a) => a.date <= today).length / attendanceBase) * 100)
     : 100;
 
   // Revenue metrics
@@ -39,8 +43,9 @@ export const StatsView: React.FC<StatsViewProps> = ({
     .filter((a) => a.isPaid)
     .reduce((sum, a) => sum + (a.fee || 0), 0);
 
+  // Absences exclues : un patient qui n'est pas venu ne doit rien.
   const pendingRevenue = appointments
-    .filter((a) => !a.isPaid && a.status !== 'cancelled')
+    .filter((a) => !a.isPaid && a.status !== 'cancelled' && a.status !== 'no_show')
     .reduce((sum, a) => sum + (a.fee || 0), 0);
 
   const todayRevenue = appointments

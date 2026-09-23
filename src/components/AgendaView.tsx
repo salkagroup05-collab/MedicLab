@@ -28,6 +28,7 @@ import {
   getTodayDateString,
   getWeekDays,
   isSameDay,
+  toLocalDateString,
 } from '../utils/dateUtils';
 import { getApproachingAppointmentsData } from '../utils/whatsappUtils';
 import { formatFCFA } from '../utils/currencyUtils';
@@ -100,7 +101,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
     setCurrentDate(new Date());
   };
 
-  const currentDateString = currentDate.toISOString().split('T')[0];
+  const currentDateString = toLocalDateString(currentDate);
 
   // Filter appointments
   const filteredAppointments = useMemo(
@@ -258,8 +259,8 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
             {viewMode === 'jour' && formatDateFr(currentDateString)}
             {viewMode === 'semaine' && (
               <>
-                Semaine du {formatDateShortFr(weekDays[0].toISOString().split('T')[0])} au{' '}
-                {formatDateShortFr(weekDays[6].toISOString().split('T')[0])}
+                Semaine du {formatDateShortFr(toLocalDateString(weekDays[0]))} au{' '}
+                {formatDateShortFr(toLocalDateString(weekDays[6]))}
               </>
             )}
             {viewMode === 'mois' &&
@@ -556,7 +557,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
             {/* Week Header Row */}
             <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
               {weekDays.map((day) => {
-                const dayStr = day.toISOString().split('T')[0];
+                const dayStr = toLocalDateString(day);
                 const isToday = isSameDay(day, new Date());
                 const dayName = new Intl.DateTimeFormat('fr-FR', { weekday: 'short' }).format(day);
                 const dayNumber = day.getDate();
@@ -588,7 +589,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
             {/* Week Days Columns */}
             <div className="grid grid-cols-7 divide-x divide-slate-200 min-h-[500px]">
               {weekDays.map((day) => {
-                const dayStr = day.toISOString().split('T')[0];
+                const dayStr = toLocalDateString(day);
                 const dayApts = filteredAppointments
                   .filter((a) => a.date === dayStr)
                   .sort((a, b) => a.startTime.localeCompare(b.startTime));

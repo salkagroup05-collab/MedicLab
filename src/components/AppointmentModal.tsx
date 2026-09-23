@@ -100,6 +100,16 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
         alert('Veuillez renseigner le nom et le prénom du patient.');
         return;
       }
+      // Pas de date inventée : elle fausserait l'âge affiché sur le dossier,
+      // les ordonnances et les courriers.
+      if (!newPatientBirthDate) {
+        alert('Veuillez renseigner la date de naissance du patient.');
+        return;
+      }
+      if (newPatientBirthDate > getTodayDateString()) {
+        alert('La date de naissance ne peut pas être dans le futur.');
+        return;
+      }
     }
 
     const appointmentPayload: Partial<Appointment> = {
@@ -133,7 +143,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
         firstName: newPatientFirstName.trim(),
         lastName: newPatientLastName.trim(),
         phone: newPatientPhone.trim() || 'Non renseigné',
-        birthDate: newPatientBirthDate || '1990-01-01',
+        birthDate: newPatientBirthDate,
         email: newPatientEmail.trim() || '',
         gender: 'Autre',
         ssn: 'À renseigner',
@@ -294,9 +304,11 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">Date de naissance</label>
+                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">Date de naissance *</label>
                   <input
                     type="date"
+                    required
+                    max={getTodayDateString()}
                     value={newPatientBirthDate}
                     onChange={(e) => setNewPatientBirthDate(e.target.value)}
                     className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500"

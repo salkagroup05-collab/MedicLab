@@ -86,7 +86,9 @@ export const PatientsView: React.FC<PatientsViewProps> = ({
   });
 
   // Current active patient to display in the right panel
-  const activePatient = selectedPatient || (patients.length > 0 ? patients[0] : null);
+  // Aucun dossier ouvert d'office : afficher le premier patient de la liste
+  // l'inscrirait au journal d'accès comme consulté sans que personne l'ait choisi.
+  const activePatient = selectedPatient;
   const activePatientId = activePatient?.id;
 
   // Journal d'accès : un dossier affiché compte comme consulté.

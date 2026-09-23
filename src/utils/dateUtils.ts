@@ -1,6 +1,15 @@
+// Date locale au format AAAA-MM-JJ. Ne pas utiliser toISOString() pour ça :
+// il convertit en UTC, et à UTC+1 (Cameroun, Bénin, Gabon…) minuit local
+// devient 23h la veille, soit la date du jour précédent.
+export function toLocalDateString(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 export function getTodayDateString(): string {
-  const today = new Date();
-  return today.toISOString().split('T')[0];
+  return toLocalDateString(new Date());
 }
 
 export function formatTimeFr(timeStr: string): string {
@@ -101,8 +110,8 @@ export function minutesToTime(minutes: number): string {
 }
 
 export function isSameDay(date1: Date | string, date2: Date | string): boolean {
-  const d1 = typeof date1 === 'string' ? date1.split('T')[0] : date1.toISOString().split('T')[0];
-  const d2 = typeof date2 === 'string' ? date2.split('T')[0] : date2.toISOString().split('T')[0];
+  const d1 = typeof date1 === 'string' ? date1.split('T')[0] : toLocalDateString(date1);
+  const d2 = typeof date2 === 'string' ? date2.split('T')[0] : toLocalDateString(date2);
   return d1 === d2;
 }
 

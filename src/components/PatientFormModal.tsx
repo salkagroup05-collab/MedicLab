@@ -122,7 +122,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
           }
         : undefined,
       notes: notes.trim(),
-      createdAt: initialPatient?.createdAt || new Date().toISOString().split('T')[0],
+      createdAt: initialPatient?.createdAt || getTodayDateString(),
     };
 
     onSave(savedPatient);

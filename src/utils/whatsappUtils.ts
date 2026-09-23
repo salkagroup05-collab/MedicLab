@@ -1,5 +1,5 @@
 import { Appointment, DoctorProfile, Patient } from '../types';
-import { formatDateFr } from './dateUtils';
+import { formatDateFr, toLocalDateString } from './dateUtils';
 
 export interface PhoneValidation {
   raw: string;
@@ -175,11 +175,11 @@ export function getApproachingAppointmentsData(
 
   const tomorrowDate = new Date(todayDate);
   tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-  const tomorrowStr = tomorrowDate.toISOString().split('T')[0];
+  const tomorrowStr = toLocalDateString(tomorrowDate);
 
   const in2DaysDate = new Date(todayDate);
   in2DaysDate.setDate(in2DaysDate.getDate() + 2);
-  const in2DaysStr = in2DaysDate.toISOString().split('T')[0];
+  const in2DaysStr = toLocalDateString(in2DaysDate);
 
   const items: {
     appointment: Appointment;

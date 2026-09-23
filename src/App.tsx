@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import {
   Appointment,
@@ -70,10 +70,22 @@ export default function App({ session }: AppProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Un seul minuteur à la fois : celui d'une erreur précédente ne doit pas
+  // effacer la nouvelle avant ses 5 secondes.
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const showError = (message: string) => {
     setErrorMessage(message);
-    setTimeout(() => setErrorMessage(null), 5000);
+    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    errorTimerRef.current = setTimeout(() => setErrorMessage(null), 5000);
   };
+  useEffect(() => () => {
+    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+  }, []);
+
+  // Annule une mise à jour optimiste d'un seul RDV. Restaurer toute la liste
+  // effacerait les autres modifications réussies entre-temps.
+  const restoreAppointment = (original: Appointment) =>
+    setAppointments((prev) => prev.map((a) => (a.id === original.id ? original : a)));
 
   // Chargement initial des données du cabinet du praticien connecté
   useEffect(() => {
@@ -176,7 +188,8 @@ export default function App({ session }: AppProps) {
     sent: boolean,
     timestamp?: string
   ) => {
-    const previous = appointments;
+    const current = appointments.find((a) => a.id === appointmentId);
+    if (!current) return;
     const sentAt = sent ? timestamp || new Date().toISOString() : undefined;
     setAppointments((prev) =>
       prev.map((a) =>
@@ -193,7 +206,7 @@ export default function App({ session }: AppProps) {
       setAppointments((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
     } catch (err) {
       console.error('Failed to update reminder status:', err);
-      setAppointments(previous);
+      restoreAppointment(current);
       showError("Erreur lors de la mise à jour du rappel WhatsApp.");
     }
   };
@@ -247,7 +260,7 @@ export default function App({ session }: AppProps) {
           firstName: newPatientData.firstName || '',
           lastName: newPatientData.lastName || '',
           gender: newPatientData.gender || 'Autre',
-          birthDate: newPatientData.birthDate || '1990-01-01',
+          birthDate: newPatientData.birthDate || '',
           ssn: newPatientData.ssn || 'À renseigner',
           phone: newPatientData.phone || '',
           email: newPatientData.email || '',
@@ -283,19 +296,23 @@ export default function App({ session }: AppProps) {
       }
     } catch (err) {
       console.error('Failed to save appointment:', err);
-      setAppointments(await loadAppointments(practitionerId));
+      // Resynchronise avec la base (le patient créé à la volée a pu être enregistré).
+      await loadAppointments(practitionerId)
+        .then(setAppointments)
+        .catch((reloadErr) => console.error('Failed to reload appointments:', reloadErr));
       showError("Erreur lors de l'enregistrement du rendez-vous.");
     }
   };
 
   const handleDeleteAppointment = async (id: string) => {
-    const previous = appointments;
+    const removed = appointments.find((a) => a.id === id);
+    if (!removed) return;
     setAppointments((prev) => prev.filter((a) => a.id !== id));
     try {
       await deleteAppointment(id);
     } catch (err) {
       console.error('Failed to delete appointment:', err);
-      setAppointments(previous);
+      setAppointments((prev) => (prev.some((a) => a.id === id) ? prev : [...prev, removed]));
       showError('Erreur lors de la suppression du rendez-vous.');
     }
   };
@@ -305,7 +322,6 @@ export default function App({ session }: AppProps) {
     isPaid: boolean,
     paymentMethod?: PaymentMethod
   ) => {
-    const previous = appointments;
     const current = appointments.find((a) => a.id === aptId);
     if (!current) return;
     const nextPaymentMethod = isPaid ? paymentMethod || current.paymentMethod || 'especes' : undefined;
@@ -318,13 +334,12 @@ export default function App({ session }: AppProps) {
       setAppointments((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
     } catch (err) {
       console.error('Failed to update payment:', err);
-      setAppointments(previous);
+      restoreAppointment(current);
       showError('Erreur lors de la mise à jour du paiement.');
     }
   };
 
   const handleUpdateStatus = async (id: string, newStatus: AppointmentStatus) => {
-    const previous = appointments;
     const current = appointments.find((a) => a.id === id);
     if (!current) return;
 
@@ -342,7 +357,7 @@ export default function App({ session }: AppProps) {
       setAppointments((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
     } catch (err) {
       console.error('Failed to update status:', err);
-      setAppointments(previous);
+      restoreAppointment(current);
       showError('Erreur lors du changement de statut.');
     }
   };
@@ -429,7 +444,9 @@ export default function App({ session }: AppProps) {
       }
     } catch (err) {
       console.error('Failed to save patient:', err);
-      setPatients(await loadPatients(practitionerId));
+      await loadPatients(practitionerId)
+        .then(setPatients)
+        .catch((reloadErr) => console.error('Failed to reload patients:', reloadErr));
       showError("Erreur lors de l'enregistrement du patient.");
     }
   };
@@ -683,11 +700,7 @@ export default function App({ session }: AppProps) {
             prescriptions={prescriptions}
             patients={patients}
             doctor={doctor}
-            onNewPrescription={() => {
-              if (patients.length > 0) {
-                handleOpenPrescriptionBuilder(patients[0]);
-              }
-            }}
+            onNewPrescription={(patient) => handleOpenPrescriptionBuilder(patient)}
             onPreviewPrescription={handlePreviewPrescription}
           />
         )}

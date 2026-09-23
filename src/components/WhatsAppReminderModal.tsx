@@ -25,6 +25,7 @@ import {
   sanitizePhoneNumber,
 } from '../utils/whatsappUtils';
 import { Modal } from './shared/Modal';
+import { getTodayDateString } from '../utils/dateUtils';
 
 interface WhatsAppReminderModalProps {
   isOpen: boolean;
@@ -47,7 +48,7 @@ export const WhatsAppReminderModal: React.FC<WhatsAppReminderModalProps> = ({
   onSaveDoctorProfile,
   initialSelectedAppointmentId,
 }) => {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getTodayDateString();
   const approachingData = getApproachingAppointmentsData(appointments, patients, todayStr);
 
   const [activeTab, setActiveTab] = useState<'demain' | 'aujourdhui' | 'j2' | 'template'>('demain');

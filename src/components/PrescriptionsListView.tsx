@@ -8,7 +8,7 @@ interface PrescriptionsListViewProps {
   prescriptions: Prescription[];
   patients: Patient[];
   doctor: DoctorProfile;
-  onNewPrescription: () => void;
+  onNewPrescription: (patient: Patient) => void;
   onPreviewPrescription: (prescription: Prescription, patient: Patient) => void;
 }
 
@@ -20,6 +20,16 @@ export const PrescriptionsListView: React.FC<PrescriptionsListViewProps> = ({
   onPreviewPrescription,
 }) => {
   const [search, setSearch] = useState('');
+  // Choix explicite du patient avant de rédiger une nouvelle ordonnance.
+  const [isPickingPatient, setIsPickingPatient] = useState(false);
+  const [patientSearch, setPatientSearch] = useState('');
+  const pickablePatients = patients
+    .filter((p) => {
+      const term = patientSearch.trim().toLowerCase();
+      if (!term) return true;
+      return `${p.lastName} ${p.firstName}`.toLowerCase().includes(term) || p.phone.includes(term);
+    })
+    .slice(0, 8);
   const patientMap = new Map<string, Patient>(patients.map((p) => [p.id, p]));
 
   const filtered = prescriptions.filter((p) => {
@@ -47,13 +57,57 @@ export const PrescriptionsListView: React.FC<PrescriptionsListViewProps> = ({
 
         <button
           type="button"
-          onClick={onNewPrescription}
+          onClick={() => {
+            setPatientSearch('');
+            setIsPickingPatient((open) => !open);
+          }}
+          aria-expanded={isPickingPatient}
           className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Nouvelle Ordonnance</span>
         </button>
       </div>
+
+      {isPickingPatient && (
+        <div className="bg-white p-4 rounded-xl border border-blue-200 shadow-2xs space-y-3">
+          <label htmlFor="new-prescription-patient" className="block text-xs font-bold text-slate-700">
+            Pour quel patient ?
+          </label>
+          <input
+            id="new-prescription-patient"
+            type="text"
+            autoFocus
+            placeholder="Nom, prénom ou téléphone..."
+            value={patientSearch}
+            onChange={(e) => setPatientSearch(e.target.value)}
+            className="w-full bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 text-xs focus:ring-1 focus:ring-blue-500 outline-hidden"
+          />
+          {pickablePatients.length === 0 ? (
+            <p className="text-xs text-slate-500">Aucun patient trouvé.</p>
+          ) : (
+            <ul className="divide-y divide-slate-100 border border-slate-100 rounded-lg">
+              {pickablePatients.map((p) => (
+                <li key={p.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsPickingPatient(false);
+                      onNewPrescription(p);
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 cursor-pointer flex justify-between gap-2"
+                  >
+                    <span className="font-semibold text-slate-800">
+                      {p.lastName.toUpperCase()} {p.firstName}
+                    </span>
+                    <span className="text-slate-500">{p.phone}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {/* List of Prescriptions */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

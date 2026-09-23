@@ -1,5 +1,5 @@
 import { Appointment, Consultation, DoctorProfile, Patient, Prescription } from '../types';
-import { getTodayDateString } from '../utils/dateUtils';
+import { getTodayDateString, toLocalDateString } from '../utils/dateUtils';
 
 export const initialDoctorProfile: DoctorProfile = {
   id: 'doc-1',
@@ -186,15 +186,15 @@ export function getInitialAppointments(): Appointment[] {
   
   const dTomorrow = new Date(dToday);
   dTomorrow.setDate(dTomorrow.getDate() + 1);
-  const tomorrow = dTomorrow.toISOString().split('T')[0];
+  const tomorrow = toLocalDateString(dTomorrow);
 
   const dAfterTomorrow = new Date(dToday);
   dAfterTomorrow.setDate(dAfterTomorrow.getDate() + 2);
-  const afterTomorrow = dAfterTomorrow.toISOString().split('T')[0];
+  const afterTomorrow = toLocalDateString(dAfterTomorrow);
 
   const dYesterday = new Date(dToday);
   dYesterday.setDate(dYesterday.getDate() - 1);
-  const yesterday = dYesterday.toISOString().split('T')[0];
+  const yesterday = toLocalDateString(dYesterday);
 
   return [
     // Rendez-vous d'aujourd'hui
