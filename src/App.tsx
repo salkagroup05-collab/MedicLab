@@ -1,33 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import {
-  Appointment,
-  AppointmentStatus,
-  Consultation,
-  DoctorProfile,
-  Patient,
-  PaymentMethod,
-  Prescription,
-} from './types';
-import {
-  createAppointment,
-  createPatient,
-  createPrescription,
-  deleteAppointment,
-  exportCabinetData,
-  ImportResult,
-  importCabinetData,
-  loadAppointments,
-  loadConsultations,
-  loadDoctorProfile,
-  loadPatients,
-  loadPrescriptions,
-  resetToDemoData,
-  updateAppointment,
-  updateDoctorProfile,
-  updatePatient,
-  saveConsultation,
-} from './lib/db';
+import { Appointment, Patient, Prescription } from './types';
 import { supabase } from './lib/supabaseClient';
 import { formatDateFr, getTodayDateString } from './utils/dateUtils';
 import { hasActiveSubscription, getTrialDaysRemaining } from './utils/subscriptionUtils';
@@ -49,6 +22,7 @@ import { SubscriptionRequiredScreen } from './components/SubscriptionRequiredScr
 import { WhatsAppReminderModal } from './components/WhatsAppReminderModal';
 import { getApproachingAppointmentsData } from './utils/whatsappUtils';
 import { useIdleSignOut } from './hooks/useIdleSignOut';
+import { useCabinetData } from './hooks/useCabinetData';
 import { IdleWarning } from './components/IdleWarning';
 import { Clock, Loader2 } from 'lucide-react';
 
@@ -60,13 +34,6 @@ export default function App({ session }: AppProps) {
   const practitionerId = session.user.id;
   const { secondsLeft: idleSecondsLeft, stayConnected } = useIdleSignOut();
 
-  // Main data state
-  const [doctor, setDoctor] = useState<DoctorProfile | null>(null);
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
-  const [consultations, setConsultations] = useState<Consultation[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Un seul minuteur à la fois : celui d'une erreur précédente ne doit pas
@@ -81,41 +48,9 @@ export default function App({ session }: AppProps) {
     if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
   }, []);
 
-  // Annule une mise à jour optimiste d'un seul RDV. Restaurer toute la liste
-  // effacerait les autres modifications réussies entre-temps.
-  const restoreAppointment = (original: Appointment) =>
-    setAppointments((prev) => prev.map((a) => (a.id === original.id ? original : a)));
-
-  // Chargement initial des données du cabinet du praticien connecté
-  useEffect(() => {
-    let cancelled = false;
-    setIsLoading(true);
-    Promise.all([
-      loadDoctorProfile(practitionerId),
-      loadPatients(practitionerId),
-      loadAppointments(practitionerId),
-      loadPrescriptions(practitionerId),
-      loadConsultations(practitionerId),
-    ])
-      .then(([doctorData, patientsData, appointmentsData, prescriptionsData, consultationsData]) => {
-        if (cancelled) return;
-        setDoctor(doctorData);
-        setPatients(patientsData);
-        setAppointments(appointmentsData);
-        setPrescriptions(prescriptionsData);
-        setConsultations(consultationsData);
-      })
-      .catch((err) => {
-        console.error('Failed to load cabinet data:', err);
-        if (!cancelled) showError('Erreur lors du chargement des données du cabinet.');
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [practitionerId]);
+  // Données du cabinet et leurs écritures (src/hooks/useCabinetData.ts)
+  const cabinet = useCabinetData(practitionerId, showError);
+  const { doctor, patients, appointments, prescriptions, consultations, isLoading } = cabinet;
 
   // Active navigation tab
   const [activeTab, setActiveTab] = useState<MainTab>('agenda');
@@ -182,34 +117,6 @@ export default function App({ session }: AppProps) {
     setIsWhatsAppModalOpen(true);
   };
 
-  const handleUpdateAppointmentReminder = async (
-    appointmentId: string,
-    sent: boolean,
-    timestamp?: string
-  ) => {
-    const current = appointments.find((a) => a.id === appointmentId);
-    if (!current) return;
-    const sentAt = sent ? timestamp || new Date().toISOString() : undefined;
-    setAppointments((prev) =>
-      prev.map((a) =>
-        a.id === appointmentId
-          ? { ...a, whatsappReminderSent: sent, whatsappReminderSentAt: sentAt }
-          : a
-      )
-    );
-    try {
-      const updated = await updateAppointment(appointmentId, {
-        whatsappReminderSent: sent,
-        whatsappReminderSentAt: sentAt,
-      });
-      setAppointments((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
-    } catch (err) {
-      console.error('Failed to update reminder status:', err);
-      restoreAppointment(current);
-      showError("Erreur lors de la mise à jour du rappel WhatsApp.");
-    }
-  };
-
   // Appointment Handlers
   const handleOpenNewAppointment = (date?: string, time?: string) => {
     setSelectedAppointment(null);
@@ -226,153 +133,11 @@ export default function App({ session }: AppProps) {
     setIsAppointmentModalOpen(true);
   };
 
-  const handleSaveAppointment = async (
-    aptData: Partial<Appointment>,
-    newPatientData?: Partial<Patient>
-  ) => {
-    if (!doctor) return;
-    // Le chevauchement de créneaux est signalé et confirmé dans AppointmentModal.
-
-    try {
-      let finalPatientId = aptData.patientId;
-
-      // If a new patient was created on the fly
-      if (newPatientData) {
-        const createdPatient = await createPatient(practitionerId, {
-          firstName: newPatientData.firstName || '',
-          lastName: newPatientData.lastName || '',
-          gender: newPatientData.gender || 'Autre',
-          birthDate: newPatientData.birthDate || '',
-          ssn: newPatientData.ssn || 'À renseigner',
-          phone: newPatientData.phone || '',
-          email: newPatientData.email || '',
-          address: newPatientData.address || '',
-          allergies: [],
-          medicalHistory: [],
-          chronicTreatments: [],
-        });
-        setPatients((prev) => [createdPatient, ...prev]);
-        finalPatientId = createdPatient.id;
-      }
-
-      if (aptData.id) {
-        const updated = await updateAppointment(aptData.id, {
-          ...aptData,
-          patientId: finalPatientId || undefined,
-        });
-        setAppointments((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
-      } else {
-        const created = await createAppointment(practitionerId, {
-          ...aptData,
-          patientId: finalPatientId || '',
-          date: aptData.date || today,
-          startTime: aptData.startTime || '09:00',
-          duration: aptData.duration || 30,
-          type: aptData.type || 'consultation',
-          status: aptData.status || 'confirmed',
-          reason: aptData.reason || 'Consultation générale',
-          fee: aptData.fee ?? doctor.consultationFee,
-          isPaid: aptData.isPaid || false,
-        });
-        setAppointments((prev) => [...prev, created]);
-      }
-    } catch (err) {
-      console.error('Failed to save appointment:', err);
-      // Resynchronise avec la base (le patient créé à la volée a pu être enregistré).
-      await loadAppointments(practitionerId)
-        .then(setAppointments)
-        .catch((reloadErr) => console.error('Failed to reload appointments:', reloadErr));
-      showError("Erreur lors de l'enregistrement du rendez-vous.");
-    }
-  };
-
-  const handleDeleteAppointment = async (id: string) => {
-    const removed = appointments.find((a) => a.id === id);
-    if (!removed) return;
-    setAppointments((prev) => prev.filter((a) => a.id !== id));
-    try {
-      await deleteAppointment(id);
-    } catch (err) {
-      console.error('Failed to delete appointment:', err);
-      setAppointments((prev) => (prev.some((a) => a.id === id) ? prev : [...prev, removed]));
-      showError('Erreur lors de la suppression du rendez-vous.');
-    }
-  };
-
-  const handleTogglePayment = async (
-    aptId: string,
-    isPaid: boolean,
-    paymentMethod?: PaymentMethod
-  ) => {
-    const current = appointments.find((a) => a.id === aptId);
-    if (!current) return;
-    const nextPaymentMethod = isPaid ? paymentMethod || current.paymentMethod || 'especes' : undefined;
-
-    setAppointments((prev) =>
-      prev.map((a) => (a.id === aptId ? { ...a, isPaid, paymentMethod: nextPaymentMethod } : a))
-    );
-    try {
-      const updated = await updateAppointment(aptId, { isPaid, paymentMethod: nextPaymentMethod });
-      setAppointments((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
-    } catch (err) {
-      console.error('Failed to update payment:', err);
-      restoreAppointment(current);
-      showError('Erreur lors de la mise à jour du paiement.');
-    }
-  };
-
-  const handleUpdateStatus = async (id: string, newStatus: AppointmentStatus) => {
-    const current = appointments.find((a) => a.id === id);
-    if (!current) return;
-
-    let arrivedAt = current.arrivedAt;
-    if (newStatus === 'waiting' && !arrivedAt) {
-      const now = new Date();
-      arrivedAt = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    }
-
-    setAppointments((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, status: newStatus, arrivedAt } : a))
-    );
-    try {
-      const updated = await updateAppointment(id, { status: newStatus, arrivedAt });
-      setAppointments((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
-    } catch (err) {
-      console.error('Failed to update status:', err);
-      restoreAppointment(current);
-      showError('Erreur lors du changement de statut.');
-    }
-  };
-
   // Consultation Handlers
   const handleStartConsultation = (apt: Appointment) => {
     setActiveConsultationAppointment(apt);
     bumpModalKey('consultation');
     setIsConsultationModalOpen(true);
-  };
-
-  const handleSaveConsultation = async (
-    consultation: Consultation,
-    updatedAppointment: Partial<Appointment>
-  ) => {
-    try {
-      // Une seule transaction : en cas d'échec, rien n'a été écrit et l'état
-      // en mémoire est toujours juste.
-      const saved = await saveConsultation(consultation, updatedAppointment);
-      setConsultations((prev) => {
-        const idx = prev.findIndex((c) => c.appointmentId === saved.consultation.appointmentId);
-        if (idx >= 0) {
-          const copy = [...prev];
-          copy[idx] = saved.consultation;
-          return copy;
-        }
-        return [saved.consultation, ...prev];
-      });
-      setAppointments((prev) => prev.map((a) => (a.id === saved.appointment.id ? saved.appointment : a)));
-    } catch (err) {
-      console.error('Failed to save consultation:', err);
-      showError("Erreur lors de l'enregistrement de la consultation.");
-    }
   };
 
   // Prescription Handlers
@@ -382,16 +147,6 @@ export default function App({ session }: AppProps) {
     setPreviewedPrescription(null);
     bumpModalKey('prescription');
     setIsPrescriptionModalOpen(true);
-  };
-
-  const handleSavePrescription = async (prescription: Prescription) => {
-    try {
-      const created = await createPrescription(practitionerId, prescription);
-      setPrescriptions((prev) => [created, ...prev]);
-    } catch (err) {
-      console.error('Failed to save prescription:', err);
-      showError("Erreur lors de l'enregistrement de l'ordonnance.");
-    }
   };
 
   const handlePreviewPrescription = (prescription: Prescription, patient: Patient) => {
@@ -414,23 +169,8 @@ export default function App({ session }: AppProps) {
   };
 
   const handleSavePatient = async (patient: Patient) => {
-    try {
-      if (patient.id) {
-        const updated = await updatePatient(patient.id, patient);
-        setPatients((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-        setSelectedPatientForDossier(updated);
-      } else {
-        const created = await createPatient(practitionerId, patient);
-        setPatients((prev) => [created, ...prev]);
-        setSelectedPatientForDossier(created);
-      }
-    } catch (err) {
-      console.error('Failed to save patient:', err);
-      await loadPatients(practitionerId)
-        .then(setPatients)
-        .catch((reloadErr) => console.error('Failed to reload patients:', reloadErr));
-      showError("Erreur lors de l'enregistrement du patient.");
-    }
+    const saved = await cabinet.savePatient(patient);
+    if (saved) setSelectedPatientForDossier(saved);
   };
 
   // Blank Forms Handler
@@ -446,124 +186,6 @@ export default function App({ session }: AppProps) {
     setAppointmentDefaultPatientId(patient.id);
     bumpModalKey('appointment');
     setIsAppointmentModalOpen(true);
-  };
-
-  // Doctor profile handler (SettingsModal + WhatsAppReminderModal template editor)
-  const handleSaveDoctor = async (profile: DoctorProfile) => {
-    const previous = doctor;
-    setDoctor(profile);
-    try {
-      const updated = await updateDoctorProfile(practitionerId, profile);
-      setDoctor(updated);
-    } catch (err) {
-      console.error('Failed to save doctor profile:', err);
-      setDoctor(previous);
-      showError('Erreur lors de la mise à jour du profil.');
-    }
-  };
-
-  // Storage Handlers
-
-  // Télécharge une copie JSON complète du cabinet. Lève une erreur en cas d'échec.
-  const downloadCabinetBackup = async (fileLabel: string) => {
-    const dataStr = await exportCabinetData(practitionerId);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${fileLabel}.json`;
-    link.click();
-    // Révocation différée : certains navigateurs annulent le téléchargement si
-    // l'URL disparaît dans la foulée du clic.
-    setTimeout(() => URL.revokeObjectURL(url), 10_000);
-  };
-
-  // Horodatage dans le nom de fichier, pour qu'une sauvegarde automatique
-  // n'écrase pas celle faite plus tôt le même jour.
-  const backupTimestamp = () => {
-    const now = new Date();
-    const hh = String(now.getHours()).padStart(2, '0');
-    const mm = String(now.getMinutes()).padStart(2, '0');
-    return `${today}_${hh}h${mm}`;
-  };
-
-  const reloadCabinetData = async () => {
-    const [doctorData, patientsData, appointmentsData, prescriptionsData, consultationsData] = await Promise.all([
-      loadDoctorProfile(practitionerId),
-      loadPatients(practitionerId),
-      loadAppointments(practitionerId),
-      loadPrescriptions(practitionerId),
-      loadConsultations(practitionerId),
-    ]);
-    setDoctor(doctorData);
-    setPatients(patientsData);
-    setAppointments(appointmentsData);
-    setPrescriptions(prescriptionsData);
-    setConsultations(consultationsData);
-  };
-
-  const handleExportData = async () => {
-    try {
-      await downloadCabinetBackup(`sauvegarde_cabinet_${today}`);
-    } catch (err) {
-      console.error('Failed to export data:', err);
-      showError("Erreur lors de l'export des données.");
-    }
-  };
-
-  // Import et réinitialisation commencent par effacer toutes les données du
-  // cabinet, puis réinsèrent ligne par ligne : une coupure réseau au milieu
-  // ferait perdre des dossiers. On télécharge donc toujours une sauvegarde
-  // d'abord, et on n'efface rien si elle échoue.
-  const handleImportData = async (jsonString: string): Promise<ImportResult> => {
-    try {
-      await downloadCabinetBackup(`sauvegarde_avant_import_${backupTimestamp()}`);
-    } catch (err) {
-      console.error('Failed to back up before import:', err);
-      return {
-        success: false,
-        errors: ["La sauvegarde préalable a échoué : import annulé, aucune donnée n'a été modifiée."],
-        imported: { patients: 0, appointments: 0, prescriptions: 0, consultations: 0 },
-      };
-    }
-
-    const result = await importCabinetData(practitionerId, jsonString);
-    // Même en cas d'échec, les données ont pu être en partie effacées : on
-    // réaffiche l'état réel de la base plutôt que l'ancien état en mémoire.
-    try {
-      await reloadCabinetData();
-    } catch (err) {
-      console.error('Failed to reload cabinet data after import:', err);
-      showError('Erreur lors du rechargement des données du cabinet.');
-    }
-    return result;
-  };
-
-  const handleResetDemo = async (): Promise<boolean> => {
-    try {
-      await downloadCabinetBackup(`sauvegarde_avant_reinitialisation_${backupTimestamp()}`);
-    } catch (err) {
-      console.error('Failed to back up before reset:', err);
-      showError("La sauvegarde préalable a échoué : réinitialisation annulée, aucune donnée n'a été modifiée.");
-      return false;
-    }
-
-    try {
-      const data = await resetToDemoData(practitionerId);
-      setDoctor(data.doctor);
-      setPatients(data.patients);
-      setAppointments(data.appointments);
-      setPrescriptions(data.prescriptions);
-      setConsultations(data.consultations);
-      return true;
-    } catch (err) {
-      console.error('Failed to reset demo data:', err);
-      showError('Erreur lors de la réinitialisation des données de démonstration.');
-      await reloadCabinetData().catch((reloadErr) =>
-        console.error('Failed to reload cabinet data after reset:', reloadErr)
-      );
-      return false;
-    }
   };
 
   const handleSignOut = async () => {
@@ -640,7 +262,7 @@ export default function App({ session }: AppProps) {
             doctor={doctor}
             onSelectAppointment={handleEditAppointment}
             onNewAppointmentSlot={handleOpenNewAppointment}
-            onUpdateStatus={handleUpdateStatus}
+            onUpdateStatus={cabinet.updateStatus}
             onStartConsultation={handleStartConsultation}
             onOpenWhatsAppReminders={handleOpenWhatsAppReminders}
           />
@@ -651,7 +273,7 @@ export default function App({ session }: AppProps) {
             appointments={appointments}
             patients={patients}
             onStartConsultation={handleStartConsultation}
-            onUpdateStatus={handleUpdateStatus}
+            onUpdateStatus={cabinet.updateStatus}
             onSelectPatient={(p) => {
               setSelectedPatientForDossier(p);
               setActiveTab('patients');
@@ -673,7 +295,7 @@ export default function App({ session }: AppProps) {
             onViewPrescription={handlePreviewPrescription}
             selectedPatient={selectedPatientForDossier}
             onEditAppointment={handleEditAppointment}
-            onTogglePayment={handleTogglePayment}
+            onTogglePayment={cabinet.togglePayment}
           />
         )}
 
@@ -707,8 +329,8 @@ export default function App({ session }: AppProps) {
         key={modalKeys.appointment}
         isOpen={isAppointmentModalOpen}
         onClose={() => setIsAppointmentModalOpen(false)}
-        onSave={handleSaveAppointment}
-        onDelete={handleDeleteAppointment}
+        onSave={cabinet.saveAppointment}
+        onDelete={cabinet.removeAppointment}
         initialAppointment={selectedAppointment}
         appointments={appointments}
         defaultDate={appointmentDefaultDate}
@@ -737,7 +359,7 @@ export default function App({ session }: AppProps) {
               ) || null
             : null
         }
-        onSaveConsultation={handleSaveConsultation}
+        onSaveConsultation={cabinet.recordConsultation}
         onOpenPrescriptionBuilder={handleOpenPrescriptionBuilder}
       />
 
@@ -750,7 +372,7 @@ export default function App({ session }: AppProps) {
         doctor={doctor}
         appointmentId={activePrescriptionAppointmentId}
         existingPrescription={previewedPrescription}
-        onSavePrescription={handleSavePrescription}
+        onSavePrescription={cabinet.savePrescription}
       />
 
       {/* Patient Create / Edit Form */}
@@ -775,10 +397,10 @@ export default function App({ session }: AppProps) {
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
         doctor={doctor}
-        onSaveDoctor={handleSaveDoctor}
-        onExportData={handleExportData}
-        onImportData={handleImportData}
-        onResetDemo={handleResetDemo}
+        onSaveDoctor={cabinet.saveDoctor}
+        onExportData={cabinet.exportData}
+        onImportData={cabinet.importData}
+        onResetDemo={cabinet.resetDemo}
         onSignOut={handleSignOut}
       />
 
@@ -793,8 +415,8 @@ export default function App({ session }: AppProps) {
         appointments={appointments}
         patients={patients}
         doctor={doctor}
-        onUpdateAppointmentReminder={handleUpdateAppointmentReminder}
-        onSaveDoctorProfile={handleSaveDoctor}
+        onUpdateAppointmentReminder={cabinet.updateAppointmentReminder}
+        onSaveDoctorProfile={cabinet.saveDoctor}
         initialSelectedAppointmentId={whatsAppInitialAppointmentId}
       />
 
