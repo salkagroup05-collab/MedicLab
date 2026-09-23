@@ -31,7 +31,6 @@ import {
   formatDateShortFr,
   getTodayDateString,
 } from '../utils/dateUtils';
-import { downloadReferralLetterPdf } from '../utils/pdfExport';
 import { logPatientAccess } from '../lib/db';
 import { Modal } from './shared/Modal';
 
@@ -402,9 +401,11 @@ export const ReferralLetterModal: React.FC<ReferralLetterModalProps> = ({
     return lines.join('\n');
   };
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     setIsExporting(true);
     try {
+      // jsPDF (plusieurs centaines de Ko) n'est chargé qu'au premier export.
+      const { downloadReferralLetterPdf } = await import('../utils/pdfExport');
       downloadReferralLetterPdf(
         patient,
         doctor,

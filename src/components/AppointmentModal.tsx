@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, User, Check, Trash2, MessageCircle } from 'lucide-react';
 import { Appointment, AppointmentStatus, AppointmentType, DoctorProfile, Patient } from '../types';
 import { getTodayDateString } from '../utils/dateUtils';
+import { findOverlappingAppointment } from '../utils/appointmentUtils';
 import { getWhatsAppLink, openWhatsAppReminder, sanitizePhoneNumber } from '../utils/whatsappUtils';
 import { APPOINTMENT_STATUS_CONFIG, DEFAULT_CONSULTATION_FEE_XOF, isDentalSpecialty } from '../constants';
 import { Modal } from './shared/Modal';
@@ -12,6 +13,8 @@ interface AppointmentModalProps {
   onSave: (appointmentData: Partial<Appointment>, newPatientData?: Partial<Patient>) => void;
   onDelete?: (id: string) => void;
   initialAppointment?: Appointment | null;
+  // Tous les RDV du cabinet, pour signaler un chevauchement avant d'enregistrer.
+  appointments: Appointment[];
   defaultDate?: string;
   defaultTime?: string;
   defaultPatientId?: string;
@@ -41,6 +44,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
   onSave,
   onDelete,
   initialAppointment,
+  appointments,
   defaultDate,
   defaultTime,
   defaultPatientId,
@@ -79,7 +83,17 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
   );
   const [whatsappReminderOptOut, setWhatsappReminderOptOut] = useState(!!init?.whatsappReminderOptOut);
 
+  // Confirmations affichées dans la modale plutôt que par confirm(), qui bloque
+  // toute la page.
+  const [overlapConfirmedFor, setOverlapConfirmedFor] = useState<string | null>(null);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+
   if (!isOpen) return null;
+
+  const slotKey = `${date}|${startTime}|${duration}`;
+  const overlapping = findOverlappingAppointment(appointments, date, startTime, duration, initialAppointment?.id);
+  const overlappingPatient = overlapping ? patients.find((p) => p.id === overlapping.patientId) : undefined;
+  const needsOverlapConfirmation = !!overlapping && overlapConfirmedFor !== slotKey;
 
   const filteredPatients = patients.filter((p) => {
     const term = patientSearch.toLowerCase();
@@ -110,6 +124,13 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
         alert('La date de naissance ne peut pas être dans le futur.');
         return;
       }
+    }
+
+    // Premier clic sur un créneau déjà pris : on affiche l'avertissement, le
+    // second (bouton « Enregistrer quand même ») enregistre.
+    if (needsOverlapConfirmation) {
+      setOverlapConfirmedFor(slotKey);
+      return;
     }
 
     const appointmentPayload: Partial<Appointment> = {
@@ -508,21 +529,38 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             </div>
           </div>
 
+          {overlapping && overlapConfirmedFor === slotKey && (
+            <div role="alert" className="p-3 rounded-lg border border-amber-300 bg-amber-50 text-xs text-amber-900">
+              Ce créneau chevauche déjà un rendez-vous avec{' '}
+              <strong>
+                {overlappingPatient
+                  ? `${overlappingPatient.firstName} ${overlappingPatient.lastName}`
+                  : 'un autre patient'}
+              </strong>{' '}
+              à {overlapping.startTime}. Cliquez à nouveau sur le bouton d'enregistrement pour confirmer.
+            </div>
+          )}
+
           {/* Footer Actions */}
           <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
             {isEditing && onDelete ? (
               <button
                 type="button"
                 onClick={() => {
-                  if (confirm('Voulez-vous vraiment supprimer ce rendez-vous ?')) {
-                    onDelete(initialAppointment.id);
-                    onClose();
+                  if (!isConfirmingDelete) {
+                    setIsConfirmingDelete(true);
+                    return;
                   }
+                  onDelete(initialAppointment.id);
+                  onClose();
                 }}
-                className="px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+                onBlur={() => setIsConfirmingDelete(false)}
+                className={`px-3 py-2 text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer ${
+                  isConfirmingDelete ? 'bg-rose-600 text-white hover:bg-rose-700' : 'text-rose-600 hover:bg-rose-50'
+                }`}
               >
                 <Trash2 className="w-4 h-4" />
-                <span>Supprimer</span>
+                <span>{isConfirmingDelete ? 'Confirmer la suppression' : 'Supprimer'}</span>
               </button>
             ) : (
               <div />

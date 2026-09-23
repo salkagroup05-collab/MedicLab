@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { Appointment, DoctorProfile, Patient, Consultation, Prescription } from '../types';
 import { calculateAge, formatDateFr, formatDateShortFr, formatTimeFr, getTodayDateString } from '../utils/dateUtils';
-import { downloadPatientDossierPdf, PdfExportOptions } from '../utils/pdfExport';
+import type { PdfExportOptions } from '../utils/pdfExport';
 import { logPatientAccess } from '../lib/db';
 import { formatFCFA } from '../utils/currencyUtils';
 import { Modal } from './shared/Modal';
@@ -52,9 +52,11 @@ export const PatientDossierPdfModal: React.FC<PatientDossierPdfModalProps> = ({
   const age = calculateAge(patient.birthDate);
   const todayFr = formatDateFr(getTodayDateString());
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     setIsExporting(true);
     try {
+      // jsPDF (plusieurs centaines de Ko) n'est chargé qu'au premier export.
+      const { downloadPatientDossierPdf } = await import('../utils/pdfExport');
       downloadPatientDossierPdf(patient, doctor, consultations, prescriptions, appointments, options);
       logPatientAccess(patient.id, 'export', 'dossier_pdf');
       setExportSuccess(true);

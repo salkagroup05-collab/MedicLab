@@ -113,9 +113,11 @@ Elle couvre le flux quotidien du cabinet, de la prise de rendez-vous au suivi po
 ├── vite.config.ts                   # Configuration Vite avec Tailwind CSS
 ├── supabase/
 │   └── migrations/
-│       └── 0001_init.sql            # Schéma Postgres, RLS et trigger de création de cabinet
+│       ├── 0001_init.sql            # Schéma Postgres, RLS et trigger de création de cabinet
+│       └── 00xx_*.sql               # Évolutions suivantes (abonnement, annuaire, journal d'accès…)
 ├── src/
-│   ├── main.tsx                     # Démarrage de l'app + gate d'authentification (session ? App : AuthScreen)
+│   ├── main.tsx                     # Démarrage de l'app
+│   ├── Root.tsx                     # Routage par URL et gate d'authentification, écrans chargés à la demande
 │   ├── App.tsx                      # Composant racine, routage d'état et modales
 │   ├── index.css                    # Styles globaux Tailwind
 │   ├── types.ts                     # Interfaces TypeScript (Patient, Appointment, Consultation, etc.)
@@ -160,7 +162,7 @@ Elle couvre le flux quotidien du cabinet, de la prise de rendez-vous au suivi po
 
 1. **Créer le backend Supabase** :
    - Créez un projet sur [supabase.com](https://supabase.com).
-   - Dans l'éditeur SQL du projet, exécutez le contenu de `supabase/migrations/0001_init.sql` (schéma, RLS et trigger de création automatique du cabinet).
+   - Dans l'éditeur SQL du projet, exécutez **tous** les scripts de `supabase/migrations/` dans l'ordre numérique (`0001_init.sql` puis les suivants). Chaque nouvelle migration doit être appliquée en production **avant** de déployer le code qui en dépend.
    - Dans *Authentication → Providers → Email*, activez la confirmation d'email obligatoire.
    - Récupérez l'URL du projet et la clé publique `anon` dans *Project Settings → API*.
 
@@ -185,6 +187,7 @@ Elle couvre le flux quotidien du cabinet, de la prise de rendez-vous au suivi po
    ```bash
    npm run lint
    npm run typecheck
+   npm test          # tests unitaires (Vitest, fuseau UTC+1)
    ```
 
 6. **Génération de la version de production** :

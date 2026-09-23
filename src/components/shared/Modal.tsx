@@ -27,6 +27,12 @@ export interface ModalProps {
   closeOnEscape?: boolean;
 }
 
+// Modales ouvertes, de la plus ancienne à la plus récente. Seule celle du dessus
+// réagit au clavier : Échap ne ferme qu'elle (une ordonnance ouverte depuis une
+// consultation se ferme sans fermer la consultation), et le piège de focus ne
+// s'applique qu'à elle.
+const openModalStack: symbol[] = [];
+
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
@@ -50,11 +56,20 @@ export const Modal: React.FC<ModalProps> = ({
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  const idRef = useRef(Symbol('modal'));
+  // Les appelants passent souvent un onClose défini en ligne : le garder dans un
+  // ref évite de réabonner l'écouteur clavier à chaque rendu du parent.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   // Ouverture : bloque le scroll de la page, mémorise l'élément actif et déplace le focus
   // dans la modale. Fermeture : restaure le scroll et rend le focus à l'élément déclencheur.
   useEffect(() => {
     if (!isOpen) return;
+    const id = idRef.current;
+    openModalStack.push(id);
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
@@ -64,6 +79,8 @@ export const Modal: React.FC<ModalProps> = ({
     (firstFocusable || card)?.focus();
 
     return () => {
+      const index = openModalStack.lastIndexOf(id);
+      if (index >= 0) openModalStack.splice(index, 1);
       document.body.style.overflow = previousOverflow;
       previouslyFocusedRef.current?.focus?.();
     };
@@ -75,8 +92,9 @@ export const Modal: React.FC<ModalProps> = ({
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (openModalStack[openModalStack.length - 1] !== idRef.current) return;
       if (e.key === 'Escape') {
-        if (closeOnEscape) onClose();
+        if (closeOnEscape) onCloseRef.current();
         return;
       }
       if (e.key !== 'Tab') return;
@@ -96,7 +114,7 @@ export const Modal: React.FC<ModalProps> = ({
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, closeOnEscape, onClose]);
+  }, [isOpen, closeOnEscape]);
 
   if (!isOpen) return null;
 

@@ -30,7 +30,6 @@ import {
 } from './lib/db';
 import { supabase } from './lib/supabaseClient';
 import { formatDateFr, getTodayDateString } from './utils/dateUtils';
-import { findOverlappingAppointment } from './utils/appointmentUtils';
 import { hasActiveSubscription, getTrialDaysRemaining } from './utils/subscriptionUtils';
 import { Header } from './components/Header';
 import { MainTab, Navigation } from './components/Navigation';
@@ -232,24 +231,7 @@ export default function App({ session }: AppProps) {
     newPatientData?: Partial<Patient>
   ) => {
     if (!doctor) return;
-
-    const conflict = findOverlappingAppointment(
-      appointments,
-      aptData.date || today,
-      aptData.startTime || '09:00',
-      aptData.duration || 30,
-      aptData.id
-    );
-    if (conflict) {
-      const conflictPatient = patients.find((p) => p.id === conflict.patientId);
-      const conflictLabel = conflictPatient
-        ? `${conflictPatient.firstName} ${conflictPatient.lastName}`
-        : 'un autre patient';
-      const proceed = confirm(
-        `Ce créneau chevauche déjà un rendez-vous avec ${conflictLabel} à ${conflict.startTime}. Voulez-vous quand même enregistrer ce rendez-vous ?`
-      );
-      if (!proceed) return;
-    }
+    // Le chevauchement de créneaux est signalé et confirmé dans AppointmentModal.
 
     try {
       let finalPatientId = aptData.patientId;
@@ -728,6 +710,7 @@ export default function App({ session }: AppProps) {
         onSave={handleSaveAppointment}
         onDelete={handleDeleteAppointment}
         initialAppointment={selectedAppointment}
+        appointments={appointments}
         defaultDate={appointmentDefaultDate}
         defaultTime={appointmentDefaultTime}
         defaultPatientId={appointmentDefaultPatientId}
