@@ -26,7 +26,7 @@ import {
   updateAppointment,
   updateDoctorProfile,
   updatePatient,
-  upsertConsultation,
+  saveConsultation,
 } from './lib/db';
 import { supabase } from './lib/supabaseClient';
 import { formatDateFr, getTodayDateString } from './utils/dateUtils';
@@ -125,6 +125,21 @@ export default function App({ session }: AppProps) {
   const [activePrescriptionAppointmentId, setActivePrescriptionAppointmentId] = useState<
     string | undefined
   >(undefined);
+  const [previewedPrescription, setPreviewedPrescription] = useState<Prescription | null>(null);
+
+  // Clé de chaque modale, incrémentée à son ouverture : la modale est remontée
+  // et repart d'un état initialisé depuis ses props, sans reste de la saisie
+  // précédente (autre patient, autre RDV). Une clé par modale, car certaines
+  // s'empilent (ordonnance ouverte depuis une consultation).
+  const [modalKeys, setModalKeys] = useState({
+    appointment: 0,
+    consultation: 0,
+    prescription: 0,
+    settings: 0,
+    whatsapp: 0,
+  });
+  const bumpModalKey = (modal: keyof typeof modalKeys) =>
+    setModalKeys((keys) => ({ ...keys, [modal]: keys[modal] + 1 }));
 
   const [isPatientFormModalOpen, setIsPatientFormModalOpen] = useState(false);
   const [patientToEdit, setPatientToEdit] = useState<Patient | null>(null);
@@ -152,6 +167,7 @@ export default function App({ session }: AppProps) {
   // WhatsApp Reminder Handlers
   const handleOpenWhatsAppReminders = (appointmentId?: string) => {
     setWhatsAppInitialAppointmentId(appointmentId || null);
+    bumpModalKey('whatsapp');
     setIsWhatsAppModalOpen(true);
   };
 
@@ -188,11 +204,13 @@ export default function App({ session }: AppProps) {
     setAppointmentDefaultDate(date || today);
     setAppointmentDefaultTime(time || '09:00');
     setAppointmentDefaultPatientId('');
+    bumpModalKey('appointment');
     setIsAppointmentModalOpen(true);
   };
 
   const handleEditAppointment = (apt: Appointment) => {
     setSelectedAppointment(apt);
+    bumpModalKey('appointment');
     setIsAppointmentModalOpen(true);
   };
 
@@ -332,6 +350,7 @@ export default function App({ session }: AppProps) {
   // Consultation Handlers
   const handleStartConsultation = (apt: Appointment) => {
     setActiveConsultationAppointment(apt);
+    bumpModalKey('consultation');
     setIsConsultationModalOpen(true);
   };
 
@@ -340,23 +359,21 @@ export default function App({ session }: AppProps) {
     updatedAppointment: Partial<Appointment>
   ) => {
     try {
-      const savedConsultation = await upsertConsultation(practitionerId, consultation);
+      // Une seule transaction : en cas d'échec, rien n'a été écrit et l'état
+      // en mémoire est toujours juste.
+      const saved = await saveConsultation(consultation, updatedAppointment);
       setConsultations((prev) => {
-        const idx = prev.findIndex((c) => c.appointmentId === savedConsultation.appointmentId);
+        const idx = prev.findIndex((c) => c.appointmentId === saved.consultation.appointmentId);
         if (idx >= 0) {
           const copy = [...prev];
-          copy[idx] = savedConsultation;
+          copy[idx] = saved.consultation;
           return copy;
         }
-        return [savedConsultation, ...prev];
+        return [saved.consultation, ...prev];
       });
-
-      const updatedApt = await updateAppointment(consultation.appointmentId, updatedAppointment);
-      setAppointments((prev) => prev.map((a) => (a.id === updatedApt.id ? updatedApt : a)));
+      setAppointments((prev) => prev.map((a) => (a.id === saved.appointment.id ? saved.appointment : a)));
     } catch (err) {
       console.error('Failed to save consultation:', err);
-      setConsultations(await loadConsultations(practitionerId));
-      setAppointments(await loadAppointments(practitionerId));
       showError("Erreur lors de l'enregistrement de la consultation.");
     }
   };
@@ -365,6 +382,8 @@ export default function App({ session }: AppProps) {
   const handleOpenPrescriptionBuilder = (patient: Patient, appointmentId?: string) => {
     setActivePrescriptionPatient(patient);
     setActivePrescriptionAppointmentId(appointmentId);
+    setPreviewedPrescription(null);
+    bumpModalKey('prescription');
     setIsPrescriptionModalOpen(true);
   };
 
@@ -381,6 +400,8 @@ export default function App({ session }: AppProps) {
   const handlePreviewPrescription = (prescription: Prescription, patient: Patient) => {
     setActivePrescriptionPatient(patient);
     setActivePrescriptionAppointmentId(prescription.appointmentId);
+    setPreviewedPrescription(prescription);
+    bumpModalKey('prescription');
     setIsPrescriptionModalOpen(true);
   };
 
@@ -424,6 +445,7 @@ export default function App({ session }: AppProps) {
     setAppointmentDefaultDate(today);
     setAppointmentDefaultTime('09:00');
     setAppointmentDefaultPatientId(patient.id);
+    bumpModalKey('appointment');
     setIsAppointmentModalOpen(true);
   };
 
@@ -592,7 +614,10 @@ export default function App({ session }: AppProps) {
           waitingPatientsCount={waitingPatientsCount}
           pendingRemindersCount={pendingRemindersCount}
           onNewAppointment={() => handleOpenNewAppointment()}
-          onOpenSettings={() => setIsSettingsModalOpen(true)}
+          onOpenSettings={() => {
+            bumpModalKey('settings');
+            setIsSettingsModalOpen(true);
+          }}
           onNavigateWaitingRoom={() => setActiveTab('waiting')}
           onOpenWhatsAppReminders={() => handleOpenWhatsAppReminders()}
           currentDateFormatted={formatDateFr(today, { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -684,6 +709,7 @@ export default function App({ session }: AppProps) {
 
       {/* Appointment Modal */}
       <AppointmentModal
+        key={modalKeys.appointment}
         isOpen={isAppointmentModalOpen}
         onClose={() => setIsAppointmentModalOpen(false)}
         onSave={handleSaveAppointment}
@@ -698,6 +724,7 @@ export default function App({ session }: AppProps) {
 
       {/* Consultation Modal */}
       <ConsultationModal
+        key={modalKeys.consultation}
         isOpen={isConsultationModalOpen}
         onClose={() => setIsConsultationModalOpen(false)}
         appointment={activeConsultationAppointment}
@@ -720,11 +747,13 @@ export default function App({ session }: AppProps) {
 
       {/* Prescription Builder & Printable Sheet */}
       <PrescriptionModal
+        key={modalKeys.prescription}
         isOpen={isPrescriptionModalOpen}
         onClose={() => setIsPrescriptionModalOpen(false)}
         patient={activePrescriptionPatient}
         doctor={doctor}
         appointmentId={activePrescriptionAppointmentId}
+        existingPrescription={previewedPrescription}
         onSavePrescription={handleSavePrescription}
       />
 
@@ -746,6 +775,7 @@ export default function App({ session }: AppProps) {
 
       {/* Practitioner Settings & Data Backup */}
       <SettingsModal
+        key={modalKeys.settings}
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
         doctor={doctor}
@@ -758,6 +788,7 @@ export default function App({ session }: AppProps) {
 
       {/* WhatsApp Approaching Reminders Hub */}
       <WhatsAppReminderModal
+        key={modalKeys.whatsapp}
         isOpen={isWhatsAppModalOpen}
         onClose={() => {
           setIsWhatsAppModalOpen(false);

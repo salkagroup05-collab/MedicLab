@@ -22,14 +22,14 @@ function HomeRoot() {
   const { session, loading, isRecovery } = useSession();
   if (loading) return <SplashScreen />;
   if (!session) return <LandingPage />;
-  return isRecovery ? <ResetPasswordScreen /> : <App session={session} />;
+  return isRecovery ? <ResetPasswordScreen /> : <App key={session.user.id} session={session} />;
 }
 
 function AuthRoot({ mode }: { mode: 'signIn' | 'signUp' }) {
   const { session, loading, isRecovery } = useSession();
   if (loading) return <SplashScreen />;
   if (!session) return <AuthScreen initialMode={mode} />;
-  return isRecovery ? <ResetPasswordScreen /> : <App session={session} />;
+  return isRecovery ? <ResetPasswordScreen /> : <App key={session.user.id} session={session} />;
 }
 
 function Root() {

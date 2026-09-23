@@ -20,6 +20,8 @@ interface PrescriptionModalProps {
   patient: Patient | null;
   doctor: DoctorProfile;
   appointmentId?: string;
+  // Ordonnance déjà enregistrée : affichage et impression uniquement.
+  existingPrescription?: Prescription | null;
   onSavePrescription: (prescription: Prescription) => void;
 }
 
@@ -38,26 +40,36 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
   patient,
   doctor,
   appointmentId,
+  existingPrescription,
   onSavePrescription,
 }) => {
-  const [medications, setMedications] = useState<Medication[]>([
-    {
-      id: `med-${Date.now()}`,
-      name: 'Paracétamol 1 g',
-      dosage: '1 comprimé',
-      frequency: '3 fois par jour si douleur',
-      duration: '5 jours',
-      instructions: 'Espacer les prises d’au moins 6 heures.',
-    },
-  ]);
-  const [recommendations, setRecommendations] = useState<string>(
-    'Repos recommandé. Bonne hydratation. Consulter en cas d\'aggravation des symptômes.'
+  const isReadOnly = !!existingPrescription;
+  // App remonte la modale à chaque ouverture (prop key) : cet état initial ne
+  // passe jamais d'un patient ou d'une ordonnance à l'autre.
+  const [medications, setMedications] = useState<Medication[]>(() =>
+    existingPrescription
+      ? existingPrescription.medications
+      : [
+          {
+            id: `med-${Date.now()}`,
+            name: 'Paracétamol 1 g',
+            dosage: '1 comprimé',
+            frequency: '3 fois par jour si douleur',
+            duration: '5 jours',
+            instructions: 'Espacer les prises d’au moins 6 heures.',
+          },
+        ]
+  );
+  const [recommendations, setRecommendations] = useState<string>(() =>
+    existingPrescription
+      ? existingPrescription.recommendations || ''
+      : 'Repos recommandé. Bonne hydratation. Consulter en cas d\'aggravation des symptômes.'
   );
 
   if (!isOpen || !patient) return null;
 
   const age = calculateAge(patient.birthDate);
-  const todayFr = formatDateFr(getTodayDateString());
+  const todayFr = formatDateFr(existingPrescription?.date || getTodayDateString());
 
   const handleAddMedication = () => {
     setMedications((prev) => [
@@ -130,7 +142,9 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
         <div className="px-6 py-3.5 bg-slate-900 text-white flex items-center justify-between no-print">
           <div className="flex items-center gap-2">
             <Pill className="w-5 h-5 text-blue-400" />
-            <h2 className="text-base font-bold">Rédaction d'Ordonnance Médicale</h2>
+            <h2 className="text-base font-bold">
+              {isReadOnly ? 'Ordonnance enregistrée' : "Rédaction d'Ordonnance Médicale"}
+            </h2>
             <span className="text-xs px-2 py-0.5 rounded-md bg-slate-800 text-slate-300">
               Patient : {patient.lastName.toUpperCase()} {patient.firstName} ({age} ans)
             </span>
@@ -160,6 +174,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
         {/* Content: 2-Column layout on desktop (Form + Live Paper Preview) */}
         <div className="flex-1 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 bg-slate-100">
           {/* Left Column: Form Controls (Hidden in Print) */}
+          {!isReadOnly && (
           <div className="lg:col-span-5 p-5 space-y-4 bg-white overflow-y-auto no-print">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-2">
@@ -273,9 +288,10 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
               />
             </div>
           </div>
+          )}
 
           {/* Right Column: High-fidelity Medical Prescription Sheet (Printable Area) */}
-          <div className="lg:col-span-7 p-6 overflow-y-auto flex items-center justify-center print:p-0 print:m-0 print:w-full print:block print:max-w-none">
+          <div className={`${isReadOnly ? 'lg:col-span-12' : 'lg:col-span-7'} p-6 overflow-y-auto flex items-center justify-center print:p-0 print:m-0 print:w-full print:block print:max-w-none`}>
             <div className="printable-area bg-white text-slate-900 shadow-md border border-slate-300 rounded-xl p-8 max-w-lg w-full min-h-[580px] flex flex-col justify-between font-sans print:shadow-none print:border-none print:p-0 print:m-0 print:max-w-none print:min-h-0 print:block">
               {/* Top Doctor Header */}
               <div>
@@ -391,6 +407,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
               <Printer className="w-4 h-4" />
               <span>Imprimer</span>
             </button>
+            {!isReadOnly && (
             <button
               type="button"
               id="save-prescription-btn"
@@ -400,6 +417,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
               <FileCheck className="w-4 h-4" />
               <span>Enregistrer l'ordonnance</span>
             </button>
+            )}
           </div>
         </div>
     </Modal>

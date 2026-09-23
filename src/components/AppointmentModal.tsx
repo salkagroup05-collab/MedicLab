@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, User, Check, Trash2, MessageCircle } from 'lucide-react';
 import { Appointment, AppointmentStatus, AppointmentType, DoctorProfile, Patient } from '../types';
 import { getTodayDateString } from '../utils/dateUtils';
@@ -47,66 +47,37 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
   patients,
   doctor,
 }) => {
+  // App remonte la modale à chaque ouverture (prop key) : l'état est initialisé
+  // une fois depuis les props, et une mise à jour des données du cabinet
+  // pendant la saisie ne vide plus le formulaire.
+  const init = initialAppointment;
   const [mode, setMode] = useState<'existing' | 'new'>('existing');
   const [patientSearch, setPatientSearch] = useState('');
-  const [selectedPatientId, setSelectedPatientId] = useState<string>('');
+  const [selectedPatientId, setSelectedPatientId] = useState<string>(
+    () => init?.patientId ?? (defaultPatientId || patients[0]?.id || '')
+  );
 
   // New patient state
   const [newPatientFirstName, setNewPatientFirstName] = useState('');
   const [newPatientLastName, setNewPatientLastName] = useState('');
   const [newPatientPhone, setNewPatientPhone] = useState('');
   const [newPatientBirthDate, setNewPatientBirthDate] = useState('');
-  const [newPatientEmail, setNewPatientEmail] = useState('');
+  const [newPatientEmail] = useState('');
 
   // Appointment state
-  const [date, setDate] = useState(defaultDate || getTodayDateString());
-  const [startTime, setStartTime] = useState(defaultTime || '09:00');
-  const [duration, setDuration] = useState<number>(doctor.defaultDuration || 30);
-  const [type, setType] = useState<AppointmentType>('consultation');
-  const [status, setStatus] = useState<AppointmentStatus>('confirmed');
-  const [reason, setReason] = useState('');
-  const [notes, setNotes] = useState('');
-  const [fee, setFee] = useState<number>(doctor.consultationFee || DEFAULT_CONSULTATION_FEE_XOF);
-  const [whatsappReminderSent, setWhatsappReminderSent] = useState(false);
-  const [whatsappReminderSentAt, setWhatsappReminderSentAt] = useState<string | undefined>(undefined);
-  const [whatsappReminderOptOut, setWhatsappReminderOptOut] = useState(false);
-
-  useEffect(() => {
-    if (initialAppointment) {
-      setSelectedPatientId(initialAppointment.patientId);
-      setDate(initialAppointment.date);
-      setStartTime(initialAppointment.startTime);
-      setDuration(initialAppointment.duration);
-      setType(initialAppointment.type);
-      setStatus(initialAppointment.status);
-      setReason(initialAppointment.reason);
-      setNotes(initialAppointment.notes || '');
-      setFee(initialAppointment.fee);
-      setWhatsappReminderSent(!!initialAppointment.whatsappReminderSent);
-      setWhatsappReminderSentAt(initialAppointment.whatsappReminderSentAt);
-      setWhatsappReminderOptOut(!!initialAppointment.whatsappReminderOptOut);
-      setMode('existing');
-    } else {
-      setSelectedPatientId(defaultPatientId || patients[0]?.id || '');
-      setDate(defaultDate || getTodayDateString());
-      setStartTime(defaultTime || '09:00');
-      setDuration(doctor.defaultDuration || 30);
-      setType('consultation');
-      setStatus('confirmed');
-      setReason('');
-      setNotes('');
-      setFee(doctor.consultationFee || DEFAULT_CONSULTATION_FEE_XOF);
-      setWhatsappReminderSent(false);
-      setWhatsappReminderSentAt(undefined);
-      setWhatsappReminderOptOut(false);
-      setMode('existing');
-      setNewPatientFirstName('');
-      setNewPatientLastName('');
-      setNewPatientPhone('');
-      setNewPatientBirthDate('');
-      setNewPatientEmail('');
-    }
-  }, [initialAppointment, defaultDate, defaultTime, defaultPatientId, doctor, patients, isOpen]);
+  const [date, setDate] = useState(init?.date ?? (defaultDate || getTodayDateString()));
+  const [startTime, setStartTime] = useState(init?.startTime ?? (defaultTime || '09:00'));
+  const [duration, setDuration] = useState<number>(init?.duration ?? (doctor.defaultDuration || 30));
+  const [type, setType] = useState<AppointmentType>(init?.type ?? 'consultation');
+  const [status, setStatus] = useState<AppointmentStatus>(init?.status ?? 'confirmed');
+  const [reason, setReason] = useState(init?.reason ?? '');
+  const [notes, setNotes] = useState(init?.notes ?? '');
+  const [fee, setFee] = useState<number>(init?.fee ?? (doctor.consultationFee || DEFAULT_CONSULTATION_FEE_XOF));
+  const [whatsappReminderSent, setWhatsappReminderSent] = useState(!!init?.whatsappReminderSent);
+  const [whatsappReminderSentAt, setWhatsappReminderSentAt] = useState<string | undefined>(
+    init?.whatsappReminderSentAt
+  );
+  const [whatsappReminderOptOut, setWhatsappReminderOptOut] = useState(!!init?.whatsappReminderOptOut);
 
   if (!isOpen) return null;
 

@@ -20,6 +20,26 @@ function toHm(time: string | null | undefined): string | undefined {
   return time.slice(0, 5);
 }
 
+// L'API Supabase renvoie au plus 1000 lignes par requête. Sans pagination, un
+// cabinet chargé verrait ses données tronquées à l'écran et dans la sauvegarde
+// JSON, donc perdues à la restauration. On lit par pages jusqu'à la dernière ;
+// le tri doit être stable (id en dernier critère) pour que les pages ne se
+// chevauchent pas.
+const PAGE_SIZE = 1000;
+
+async function fetchAllRows<T>(
+  fetchPage: (from: number, to: number) => PromiseLike<{ data: unknown; error: unknown }>
+): Promise<T[]> {
+  const rows: T[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await fetchPage(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    const page = (data ?? []) as T[];
+    rows.push(...page);
+    if (page.length < PAGE_SIZE) return rows;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // practitioners (DoctorProfile)
 // ---------------------------------------------------------------------------
@@ -183,13 +203,16 @@ function patientToRow(patch: Partial<Patient>): Record<string, unknown> {
 }
 
 export async function loadPatients(practitionerId: string): Promise<Patient[]> {
-  const { data, error } = await supabase
-    .from('patients')
-    .select('*')
-    .eq('practitioner_id', practitionerId)
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return ((data ?? []) as PatientRow[]).map(rowToPatient);
+  const rows = await fetchAllRows<PatientRow>((from, to) =>
+    supabase
+      .from('patients')
+      .select('*')
+      .eq('practitioner_id', practitionerId)
+      .order('created_at', { ascending: false })
+      .order('id')
+      .range(from, to)
+  );
+  return rows.map(rowToPatient);
 }
 
 export async function createPatient(practitionerId: string, patient: Partial<Patient>): Promise<Patient> {
@@ -280,14 +303,17 @@ function appointmentToRow(patch: Partial<Appointment>): Record<string, unknown> 
 }
 
 export async function loadAppointments(practitionerId: string): Promise<Appointment[]> {
-  const { data, error } = await supabase
-    .from('appointments')
-    .select('*')
-    .eq('practitioner_id', practitionerId)
-    .order('date', { ascending: true })
-    .order('start_time', { ascending: true });
-  if (error) throw error;
-  return ((data ?? []) as AppointmentRow[]).map(rowToAppointment);
+  const rows = await fetchAllRows<AppointmentRow>((from, to) =>
+    supabase
+      .from('appointments')
+      .select('*')
+      .eq('practitioner_id', practitionerId)
+      .order('date', { ascending: true })
+      .order('start_time', { ascending: true })
+      .order('id')
+      .range(from, to)
+  );
+  return rows.map(rowToAppointment);
 }
 
 export async function createAppointment(
@@ -343,13 +369,16 @@ function rowToPrescription(row: PrescriptionRow): Prescription {
 }
 
 export async function loadPrescriptions(practitionerId: string): Promise<Prescription[]> {
-  const { data, error } = await supabase
-    .from('prescriptions')
-    .select('*')
-    .eq('practitioner_id', practitionerId)
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return ((data ?? []) as PrescriptionRow[]).map(rowToPrescription);
+  const rows = await fetchAllRows<PrescriptionRow>((from, to) =>
+    supabase
+      .from('prescriptions')
+      .select('*')
+      .eq('practitioner_id', practitionerId)
+      .order('created_at', { ascending: false })
+      .order('id')
+      .range(from, to)
+  );
+  return rows.map(rowToPrescription);
 }
 
 function prescriptionToRow(presc: Partial<Prescription>): Record<string, unknown> {
@@ -422,18 +451,21 @@ function rowToConsultation(row: ConsultationRow): Consultation {
 }
 
 export async function loadConsultations(practitionerId: string): Promise<Consultation[]> {
-  const { data, error } = await supabase
-    .from('consultations')
-    .select('*')
-    .eq('practitioner_id', practitionerId)
-    .order('date', { ascending: false });
-  if (error) throw error;
-  return ((data ?? []) as ConsultationRow[]).map(rowToConsultation);
+  const rows = await fetchAllRows<ConsultationRow>((from, to) =>
+    supabase
+      .from('consultations')
+      .select('*')
+      .eq('practitioner_id', practitionerId)
+      .order('date', { ascending: false })
+      .order('id')
+      .range(from, to)
+  );
+  return rows.map(rowToConsultation);
 }
 
 function consultationToRow(consultation: Consultation): Record<string, unknown> {
   const vitals = consultation.vitals;
-  return {
+  const row: Record<string, unknown> = {
     appointment_id: consultation.appointmentId,
     patient_id: consultation.patientId,
     date: consultation.date,
@@ -448,23 +480,30 @@ function consultationToRow(consultation: Consultation): Record<string, unknown> 
     blood_sugar: vitals?.bloodSugar ?? null,
     soap: consultation.soap,
     odontogram: consultation.odontogram ?? null,
-    prescription_id: consultation.prescriptionId ?? null,
-    notes: consultation.notes ?? null,
   };
+  // Clés absentes de l'objet = non envoyées : réenregistrer une consultation ne
+  // doit pas couper le lien vers une ordonnance déjà rattachée, ni vider les notes.
+  if ('prescriptionId' in consultation) row.prescription_id = consultation.prescriptionId ?? null;
+  if ('notes' in consultation) row.notes = consultation.notes ?? null;
+  return row;
 }
 
-export async function upsertConsultation(
-  practitionerId: string,
-  consultation: Consultation
-): Promise<Consultation> {
-  const row = { ...consultationToRow(consultation), practitioner_id: practitionerId };
-  const { data, error } = await supabase
-    .from('consultations')
-    .upsert(row, { onConflict: 'appointment_id' })
-    .select()
-    .single();
+// Consultation et RDV associé (statut, paiement) dans une seule transaction :
+// voir save_consultation (0013_consultation_atomic_and_indexes.sql).
+export async function saveConsultation(
+  consultation: Consultation,
+  appointmentPatch: Partial<Appointment>
+): Promise<{ consultation: Consultation; appointment: Appointment }> {
+  const { data, error } = await supabase.rpc('save_consultation', {
+    p_consultation: consultationToRow(consultation),
+    p_appointment: appointmentToRow(appointmentPatch),
+  });
   if (error) throw error;
-  return rowToConsultation(data as ConsultationRow);
+  const result = data as { consultation: ConsultationRow; appointment: AppointmentRow };
+  return {
+    consultation: rowToConsultation(result.consultation),
+    appointment: rowToAppointment(result.appointment),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -488,6 +527,19 @@ export async function exportCabinetData(practitionerId: string): Promise<string>
     prescriptions,
     consultations,
   };
+  // Trace dans access_log, sans bloquer le téléchargement (comme logPatientAccess).
+  supabase
+    .rpc('log_cabinet_export', {
+      p_details: {
+        patients: patients.length,
+        appointments: appointments.length,
+        prescriptions: prescriptions.length,
+        consultations: consultations.length,
+      },
+    })
+    .then(({ error }) => {
+      if (error) console.error('Failed to log cabinet export:', error.message);
+    });
   return JSON.stringify(data, null, 2);
 }
 

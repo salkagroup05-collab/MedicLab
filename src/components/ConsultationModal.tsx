@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   X,
   Stethoscope,
@@ -41,72 +41,45 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
   onSaveConsultation,
   onOpenPrescriptionBuilder,
 }) => {
+  // App remonte la modale à chaque ouverture (prop key) : l'état est initialisé
+  // une fois depuis les props, et une mise à jour des données du cabinet
+  // pendant la saisie n'efface plus les notes SOAP.
+  const isDentist = isDentalSpecialty(doctor.specialty);
+  const v = existingConsultation?.vitals || {};
+  const soap = existingConsultation?.soap;
+
   // Vitals
-  const [systolicBp, setSystolicBp] = useState<number | ''>('');
-  const [diastolicBp, setDiastolicBp] = useState<number | ''>('');
-  const [heartRate, setHeartRate] = useState<number | ''>('');
-  const [weight, setWeight] = useState<number | ''>('');
-  const [height, setHeight] = useState<number | ''>('');
-  const [temperature, setTemperature] = useState<number | ''>('');
-  const [bloodSugar, setBloodSugar] = useState<number | ''>('');
+  const [systolicBp, setSystolicBp] = useState<number | ''>(v.systolicBp ?? '');
+  const [diastolicBp, setDiastolicBp] = useState<number | ''>(v.diastolicBp ?? '');
+  const [heartRate, setHeartRate] = useState<number | ''>(v.heartRate ?? '');
+  const [weight, setWeight] = useState<number | ''>(v.weight ?? '');
+  const [height, setHeight] = useState<number | ''>(v.height ?? '');
+  const [temperature, setTemperature] = useState<number | ''>(v.temperature ?? '');
+  const [bloodSugar] = useState<number | ''>(v.bloodSugar ?? '');
 
   // SOAP
-  const [subjective, setSubjective] = useState('');
-  const [objective, setObjective] = useState('');
-  const [assessment, setAssessment] = useState('');
-  const [plan, setPlan] = useState('');
+  const [subjective, setSubjective] = useState(
+    soap ? soap.subjective || '' : appointment ? `Motif: ${appointment.reason}. ` : ''
+  );
+  const [objective, setObjective] = useState(
+    soap
+      ? soap.objective || ''
+      : isDentist
+        ? ''
+        : 'Examen général : état général conservé. Auscultation cardio-pulmonaire normale.'
+  );
+  const [assessment, setAssessment] = useState(soap?.assessment || '');
+  const [plan, setPlan] = useState(soap?.plan || '');
 
   // Odontogramme (uniquement pour les spécialités dentaires)
-  const [odontogram, setOdontogram] = useState<Odontogram>({});
+  const [odontogram, setOdontogram] = useState<Odontogram>(existingConsultation?.odontogram || {});
 
   // Payment
-  const [isPaid, setIsPaid] = useState<boolean>(false);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('carte');
-  const [fee, setFee] = useState<number>(DEFAULT_CONSULTATION_FEE_XOF);
-
-  const isDentist = isDentalSpecialty(doctor.specialty);
-
-  useEffect(() => {
-    if (existingConsultation) {
-      const v = existingConsultation.vitals || {};
-      setSystolicBp(v.systolicBp ?? '');
-      setDiastolicBp(v.diastolicBp ?? '');
-      setHeartRate(v.heartRate ?? '');
-      setWeight(v.weight ?? '');
-      setHeight(v.height ?? '');
-      setTemperature(v.temperature ?? '');
-      setBloodSugar(v.bloodSugar ?? '');
-
-      setSubjective(existingConsultation.soap.subjective || '');
-      setObjective(existingConsultation.soap.objective || '');
-      setAssessment(existingConsultation.soap.assessment || '');
-      setPlan(existingConsultation.soap.plan || '');
-      setOdontogram(existingConsultation.odontogram || {});
-    } else if (appointment) {
-      setSubjective(`Motif: ${appointment.reason}. `);
-      setObjective(
-        isDentalSpecialty(doctor.specialty)
-          ? ''
-          : 'Examen général : état général conservé. Auscultation cardio-pulmonaire normale.'
-      );
-      setAssessment('');
-      setPlan('');
-      setSystolicBp('');
-      setDiastolicBp('');
-      setHeartRate('');
-      setWeight('');
-      setHeight('');
-      setTemperature('');
-      setBloodSugar('');
-      setOdontogram({});
-    }
-
-    if (appointment) {
-      setIsPaid(appointment.isPaid);
-      setPaymentMethod(appointment.paymentMethod || 'carte');
-      setFee(appointment.fee || doctor.consultationFee || DEFAULT_CONSULTATION_FEE_XOF);
-    }
-  }, [existingConsultation, appointment, doctor, isOpen]);
+  const [isPaid, setIsPaid] = useState<boolean>(appointment?.isPaid ?? false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(appointment?.paymentMethod || 'carte');
+  const [fee, setFee] = useState<number>(
+    appointment?.fee || doctor.consultationFee || DEFAULT_CONSULTATION_FEE_XOF
+  );
 
   if (!isOpen || !patient || !appointment) return null;
 

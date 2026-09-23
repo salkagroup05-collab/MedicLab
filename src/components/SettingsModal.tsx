@@ -62,6 +62,32 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [acceptsNewPatients, setAcceptsNewPatients] = useState(doctor.acceptsNewPatients);
   const [publicBio, setPublicBio] = useState(doctor.publicBio);
 
+  // Le profil peut changer pendant que la modale est ouverte (import d'une
+  // sauvegarde, réinitialisation démo) : on recale les champs, sinon
+  // « Enregistrer » réécrirait les anciennes valeurs par-dessus.
+  const [syncedDoctor, setSyncedDoctor] = useState(doctor);
+  if (syncedDoctor !== doctor) {
+    setSyncedDoctor(doctor);
+    const known = MEDICAL_SPECIALTIES.includes(doctor.specialty);
+    setName(doctor.name);
+    setTitle(doctor.title);
+    setSpecialtySelect(known ? doctor.specialty : 'Autre');
+    setSpecialtyOther(known ? '' : doctor.specialty);
+    setProfessionalOrderNumber(doctor.professionalOrderNumber || '');
+    setNinea(doctor.ninea || '');
+    setPhone(doctor.phone);
+    setEmail(doctor.email);
+    setAddress(doctor.address);
+    setCity(doctor.city);
+    setConsultationFee(doctor.consultationFee);
+    setDefaultDuration(doctor.defaultDuration);
+    setWhatsappReminderHours(doctor.whatsappReminderHours || 24);
+    setWhatsappCustomTemplate(doctor.whatsappCustomTemplate || DEFAULT_WHATSAPP_TEMPLATE);
+    setIsPublicListed(doctor.isPublicListed);
+    setAcceptsNewPatients(doctor.acceptsNewPatients);
+    setPublicBio(doctor.publicBio);
+  }
+
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   // Import et réinitialisation effacent tout le cabinet : on passe par une
