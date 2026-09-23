@@ -23,7 +23,7 @@ export const IdleWarning: React.FC<IdleWarningProps> = ({ secondsLeft, onStayCon
         Déconnexion dans {secondsLeft} s
       </p>
       <p className="text-xs text-slate-500 mt-0.5">
-        Aucune activité depuis bientôt 30 minutes. Vos dossiers seront verrouillés.
+        Aucune activité depuis bientôt 60 minutes. Vos dossiers seront verrouillés.
       </p>
       <button
         type="button"

@@ -39,7 +39,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'signIn' }
   const [error, setError] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(() =>
     new URLSearchParams(window.location.search).get('raison') === 'inactivite'
-      ? 'Vous avez été déconnecté après 30 minutes d\'inactivité. Reconnectez-vous pour continuer.'
+      ? 'Vous avez été déconnecté après 60 minutes d\'inactivité. Reconnectez-vous pour continuer.'
       : null
   );
 

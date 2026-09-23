@@ -12,7 +12,7 @@ import { supabase } from '../lib/supabaseClient';
 // de zéro. On ne peut pas se fier à l'événement SIGNED_IN pour ça, supabase-js
 // l'émet aussi à chaque rechargement de page.
 
-export const IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+export const IDLE_TIMEOUT_MS = 60 * 60 * 1000;
 const WARNING_BEFORE_MS = 60 * 1000;
 const CHECK_INTERVAL_MS = 1000;
 // Évite d'écrire en localStorage à chaque frappe ou défilement.
